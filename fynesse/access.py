@@ -66,7 +66,7 @@ def create_connection(user, password, host, database, port=3306):
   return conn
 
 
-  def housing_upload_join_data(conn, year):
+def housing_upload_join_data(conn, year):
     start_date = str(year) + "-01-01"
     end_date = str(year) + "-12-31"
 
