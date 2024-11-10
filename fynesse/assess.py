@@ -61,3 +61,45 @@ def count_pois_near_coordinates(latitude: float, longitude: float, tags: dict, d
     poi_count["amenity"] = pois_df["amenity"].isin(tags["amenity"]).sum()
 
     return poi_count
+
+
+def cluster_locations(df, n_clusters=3):
+    """
+    Cluster locations based on features using KMeans
+    """
+    feature_columns = df.columns.difference(['location', 'coordinates'])
+    X = df[feature_columns]
+
+    kmeans = KMeans(n_clusters=n_clusters)
+    df['cluster'] = kmeans.fit_predict(X)
+
+    return df
+
+
+def plot_clusters(df):
+    """
+    Plots locations based on their clusters.
+    """
+    df['latitude'] = df['coordinates'].apply(lambda x: x[0])
+    df['longitude'] = df['coordinates'].apply(lambda x: x[1])
+    
+    plt.figure(figsize=(10, 8))
+    for cluster in df['cluster'].unique():
+        cluster_data = df[df['cluster'] == cluster]
+        plt.scatter(
+            cluster_data['longitude'], cluster_data['latitude'],
+            label=f'Cluster {cluster}', s=50, alpha=0.6
+        )
+        
+        for _, row in cluster_data.iterrows():
+            plt.text(
+                row['longitude'], row['latitude'], row['location'],
+                fontsize=8, ha='right'
+            )
+            
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title("Clustered Locations")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
