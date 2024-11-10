@@ -1,8 +1,10 @@
 from .config import *
 import requests
 import pymysql
-import time
 import csv
+import osmnx as ox
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
 """These are the types of import we might expect in this file
 import httplib2
@@ -85,3 +87,26 @@ def housing_upload_join_data(conn, year):
     print('Storing data for year: ' + str(year))
     cur.execute(f"LOAD DATA LOCAL INFILE '" + csv_file_path + "' INTO TABLE `prices_coordinates_data` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
     print('Data stored for year: ' + str(year))
+
+
+def query_osm(latitude: float, longitude: float, tags: dict, distance_km: float = 1.0) -> dict:
+    """
+    Access Points of Interest (POIs) near a given pair of coordinates within a specified distance.
+    Args:
+        latitude (float): Latitude of the location.
+        longitude (float): Longitude of the location.
+        tags (dict): A dictionary of OSM tags to filter the POIs (e.g., {'amenity': True, 'tourism': True}).
+        distance_km (float): The distance around the location in kilometers. Default is 1 km.
+    Returns:
+        dict: A dictionary where keys are the OSM tags and values are the counts of POIs for each tag.
+    """
+    # This might not be mathematically accurate, but can change it
+    distance_coords = distance_km / 111
+    north = latitude + distance_coords
+    south = latitude - distance_coords
+    west = longitude - distance_coords
+    east = longitude + distance_coords
+
+    pois = ox.geometries_from_bbox(north, south, east, west, tags)
+
+    return pois
