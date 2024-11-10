@@ -75,9 +75,11 @@ def cluster_locations(df, n_clusters=3):
     X = df[feature_columns]
 
     kmeans = KMeans(n_clusters=n_clusters)
-    df["cluster"] = kmeans.fit_predict(X)
 
-    return df
+    clustered_df = df.copy()
+    clustered_df["cluster"] = kmeans.fit_predict(X)
+
+    return clustered_df
 
 
 def plot_clusters(df):
@@ -107,3 +109,19 @@ def plot_clusters(df):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+
+def normalise_data_frame(df):
+    """
+    Normalise data frame
+    """
+    normalised_df = df.copy()
+
+    feature_columns = df.columns.difference(["location", "coordinates"])
+    numerical_df = df[feature_columns]
+
+    normalised_features = (numerical_df - numerical_df.min()) / (numerical_df.max() - numerical_df.min())
+    
+    normalised_df[numerical_df.columns] = normalised_features
+
+    return normalised_df
