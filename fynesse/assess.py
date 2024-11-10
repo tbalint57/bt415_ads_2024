@@ -43,7 +43,7 @@ def count_pois_near_coordinates(latitude: float, longitude: float, tags: dict, d
     Args:
         latitude (float): Latitude of the location.
         longitude (float): Longitude of the location.
-        tags (dict): A dictionary of OSM tags to filter the POIs (e.g., {'amenity': True, 'tourism': True}).
+        tags (dict): A dictionary of OSM tags to filter the POIs (e.g., {"amenity": True, "tourism": True}).
         distance_km (float): The distance around the location in kilometers. Default is 1 km.
     Returns:
         dict: A dictionary where keys are the OSM tags and values are the counts of POIs for each tag.
@@ -61,6 +61,9 @@ def count_pois_near_coordinates(latitude: float, longitude: float, tags: dict, d
 
     poi_count["amenity"] = pois_df["amenity"].isin(tags["amenity"]).sum()
 
+    for amenity in tags["amenity"]:
+        poi_count[amenity] = (pois_df["amenity"] == amenity).sum()
+
     return poi_count
 
 
@@ -68,11 +71,11 @@ def cluster_locations(df, n_clusters=3):
     """
     Cluster locations based on features using KMeans
     """
-    feature_columns = df.columns.difference(['location', 'coordinates'])
+    feature_columns = df.columns.difference(["location", "coordinates"])
     X = df[feature_columns]
 
     kmeans = KMeans(n_clusters=n_clusters)
-    df['cluster'] = kmeans.fit_predict(X)
+    df["cluster"] = kmeans.fit_predict(X)
 
     return df
 
@@ -81,21 +84,21 @@ def plot_clusters(df):
     """
     Plots locations based on their clusters.
     """
-    df['latitude'] = df['coordinates'].apply(lambda x: x[0])
-    df['longitude'] = df['coordinates'].apply(lambda x: x[1])
+    df["latitude"] = df["coordinates"].apply(lambda x: x[0])
+    df["longitude"] = df["coordinates"].apply(lambda x: x[1])
     
     plt.figure(figsize=(10, 8))
-    for cluster in df['cluster'].unique():
-        cluster_data = df[df['cluster'] == cluster]
+    for cluster in df["cluster"].unique():
+        cluster_data = df[df["cluster"] == cluster]
         plt.scatter(
-            cluster_data['longitude'], cluster_data['latitude'],
-            label=f'Cluster {cluster}', s=50, alpha=0.6
+            cluster_data["longitude"], cluster_data["latitude"],
+            label=f"Cluster {cluster}", s=50, alpha=0.6
         )
         
         for _, row in cluster_data.iterrows():
             plt.text(
-                row['longitude'], row['latitude'], row['location'],
-                fontsize=8, ha='right'
+                row["longitude"], row["latitude"], row["location"],
+                fontsize=8, ha="right"
             )
             
     plt.xlabel("Longitude")
