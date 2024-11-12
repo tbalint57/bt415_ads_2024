@@ -74,7 +74,33 @@ def housing_upload_join_data(conn, year):
 
     cur = conn.cursor()
     print('Selecting data for year: ' + str(year))
-    cur.execute(f'SELECT pp.price, pp.date_of_transfer, po.postcode, pp.property_type, pp.new_build_flag, pp.tenure_type, pp.locality, pp.town_city, pp.district, pp.county, po.country, po.latitude, po.longitude FROM (SELECT price, date_of_transfer, postcode, property_type, new_build_flag, tenure_type, locality, town_city, district, county FROM pp_data WHERE date_of_transfer BETWEEN "' + start_date + '" AND "' + end_date + '") AS pp INNER JOIN postcode_data AS po ON pp.postcode = po.postcode')
+    cur.execute(f'''SELECT pp.price, 
+                    pp.date_of_transfer, 
+                    po.postcode, 
+                    pp.property_type, 
+                    pp.new_build_flag, 
+                    pp.tenure_type, 
+                    pp.locality, 
+                    pp.town_city, 
+                    pp.district, 
+                    pp.county, 
+                    po.country, 
+                    po.latitude, 
+                    po.longitude 
+                FROM (SELECT price, 
+                        date_of_transfer, 
+                        postcode, 
+                        property_type, 
+                        new_build_flag, 
+                        tenure_type, 
+                        locality, 
+                        town_city, 
+                        district, 
+                        county 
+                    FROM pp_data 
+                    WHERE date_of_transfer BETWEEN "' + start_date + '" 
+                    AND "' + end_date + '") AS pp 
+                INNER JOIN postcode_data AS po ON pp.postcode = po.postcode''')
     rows = cur.fetchall()
 
     csv_file_path = 'output_file.csv'

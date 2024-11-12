@@ -1,5 +1,6 @@
 from .config import *
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
@@ -125,3 +126,52 @@ def normalise_data_frame(df):
     normalised_df[numerical_df.columns] = normalised_features
 
     return normalised_df
+
+def get_sales_in_region(conn, latitude, longitude, from_year, distance_km = 1):
+    from_date = str(from_year) + "-01-01"
+    distance_degree = distance_km / 111
+
+    cur = conn.cursor()
+    cur.execute(f'''
+    SELECT pc.price AS price, 
+           pc.date_of_transfer AS date_of_transfer, 
+           pc.postcode AS postcode, 
+           pp.street AS street, 
+           pp.primary_addressable_object_name AS number
+    FROM prices_coordinates_data AS pc
+    INNER JOIN pp_data AS pp 
+    ON pp.postcode = pc.postcode 
+        AND pp.price = pc.price 
+        AND pp.date_of_transfer = pc.date_of_transfer
+    WHERE pc.date_of_transfer >= "{from_date}" 
+        AND pc.latitude BETWEEN {latitude} - {distance_degree} AND {latitude} + {distance_degree}
+        AND pc.longitude BETWEEN {longitude} - {distance_degree} AND {longitude} + {distance_degree}
+    ''')
+
+    result = cur.fetchall()
+    return pd.DataFrame(result)
+
+
+def get_building_addresses_in_region(latitude, longitude, distance_km=1):
+    buildings = access.query_osm(latitude, longitude, {"building": True}, distance_km)
+    addresses = buildings[["addr:postcode", "addr:street", "addr:housenumber", "building", "geometry"]].dropna().rename(columns={"addr:postcode": "postcode", "addr:street": "street", "addr:housenumber": "number"})
+    addresses["area"] = addresses["geometry"].area * 111 * 111 * 1000 * 1000
+    addresses = addresses[["postcode", "street", "number", "building", "area"]]
+    addresses["street"] = addresses["street"].apply(str.upper)
+    return addresses
+
+
+def visualise_relationship(df, column_a, column_b):
+    plt.figure(figsize=(8, 6))  # Set the figure size
+    plt.scatter(df[column_a], df[column_b], color="green", alpha=0.7)
+
+
+    a, b = np.polyfit(df[column_a], df[column_b], 1)
+    plt.plot(df[column_a], a*df[column_a]+b)
+
+    # Add labels and title
+    plt.xlabel(column_a)
+    plt.ylabel(column_b)
+    plt.title("Relationship between " + column_a + " and " + column_b)
+
+    plt.show()
