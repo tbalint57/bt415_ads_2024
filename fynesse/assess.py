@@ -149,7 +149,8 @@ def get_sales_in_region(conn, latitude, longitude, from_year, distance_km = 1):
     ''')
 
     result = cur.fetchall()
-    return pd.DataFrame(result)
+    columns = [desc[0] for desc in cur.description]
+    return pd.DataFrame(result, columns=columns)
 
 
 def get_building_addresses_in_region(latitude, longitude, distance_km=1):
