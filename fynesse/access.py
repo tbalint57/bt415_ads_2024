@@ -121,6 +121,7 @@ def download_census_data(code, base_dir=''):
     extract_dir = os.path.join(base_dir, os.path.splitext(os.path.basename(url))[0])
 
     if os.path.exists(extract_dir) and os.listdir(extract_dir):
+        print(f"Files already exist at: {extract_dir}.")
         return
 
     os.makedirs(extract_dir, exist_ok=True)
