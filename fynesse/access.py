@@ -214,7 +214,7 @@ def upload_csv_to_table(conn, table_name, file_name):
     conn.commit()
 
 
-def upload_census_data_from_df(conn, code, census_df, types=None):
+def upload_census_data_from_df(conn, code, census_df, key = None, types=None):
     table_name = "census_2021_" + code
     if types is None:
         types = ["float(32) unsigned NOT NULL" for _ in census_df.columns]
@@ -222,8 +222,11 @@ def upload_census_data_from_df(conn, code, census_df, types=None):
 
     columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
 
+    if key is None:
+        key = code + "_id"
+
     setup_table(conn, table_name, columns)
-    add_key_to_table(conn, table_name, code + "_id")
+    add_key_to_table(conn, table_name, key)
 
     census_df.to_csv("census_upload.csv", index=False)
     upload_csv_to_table(conn, table_name, "census_upload.csv")
