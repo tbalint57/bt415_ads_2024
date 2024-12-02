@@ -243,3 +243,20 @@ def upload_ons_data_from_df(conn, ons_df, types=None):
 
     ons_df.to_csv("ons_upload.csv", index=False)
     upload_csv_to_table(conn, table_name, "ons_upload.csv")
+
+
+def query_AWS_load_table(conn, table_name, columns=None):
+    if columns is None:
+        query_str = f"SELECT * FROM {table_name};"
+    else:
+        cols = ", ".join(columns)
+        query_str = f"SELECT {cols} FROM {table_name};"
+    
+    cur = conn.cursor()
+    
+    cur.execute(query_str)
+    data = cur.fetchall()
+    colnames = [desc[0] for desc in cur.description]
+    
+    df = pd.DataFrame(data, columns=colnames)
+    return df
