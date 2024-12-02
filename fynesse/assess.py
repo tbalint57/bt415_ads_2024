@@ -60,11 +60,6 @@ def count_pois_near_coordinates(latitude: float, longitude: float, tags: dict, d
         if tag in pois_df.columns:
             poi_count[tag] = pois_df[tag].notnull().sum()
 
-    poi_count["amenity"] = pois_df["amenity"].isin(tags["amenity"]).sum()
-
-    for amenity in tags["amenity"]:
-        poi_count[amenity] = (pois_df["amenity"] == amenity).sum()
-
     return poi_count
 
 
