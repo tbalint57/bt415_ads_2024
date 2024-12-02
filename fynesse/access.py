@@ -166,7 +166,7 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
             census_df = census_df.drop(census_df.columns[drop_culomns], axis=1)
 
         if column_names is not None:
-            census_df.columns = column_names[code] 
+            census_df.columns = column_names
 
         return census_df
 
