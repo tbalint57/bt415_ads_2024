@@ -219,7 +219,7 @@ def upload_csv_to_table(conn, table_name, file_name):
 def upload_census_data_from_df(conn, code, census_df, key = None, types=None):
     table_name = "census_2021_" + code
     if types is None:
-        types = ["float(32) unsigned NOT NULL" for _ in census_df.columns]
+        types = ["float(32) NOT NULL" for _ in census_df.columns]
         types[0] = "varchar(10) NOT NULL"
 
     columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
