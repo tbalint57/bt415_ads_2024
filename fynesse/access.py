@@ -7,6 +7,7 @@ import warnings
 import pandas as pd
 import zipfile
 import io
+from shapely.geometry import box
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
 """These are the types of import we might expect in this file
@@ -111,7 +112,8 @@ def query_osm(latitude: float, longitude: float, tags: dict, distance_km: float 
     west = longitude - distance_coords
     east = longitude + distance_coords
 
-    pois = ox.geometries_from_bbox(north, south, east, west, tags)
+    bbox = box(west, south, east, north)
+    pois = ox.features_from_polygon(bbox, tags=tags)
 
     return pois
 
