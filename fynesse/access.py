@@ -154,5 +154,76 @@ def load_csv(file_name, columns=None, column_names=None, index=None):
     return df
 
 
-def load_census_data(code, level='oa'):
-    return load_csv(f'census2021-{code.lower()}/census2021-{code.lower()}-{level}.csv')
+def load_census_data(code, drop_culomns=None, column_names=None, ):
+    try:
+        census_df = load_csv(f'census2021-{code.lower()}/census2021-{code.lower()}-oa.csv')
+
+    except FileNotFoundError:
+        census_df = load_csv(f'census2021-{code.lower()}/census2021-{code.lower()}-msoa.csv')
+
+    finally:
+        if drop_culomns is not None:
+            census_df = census_df.drop(census_df.columns[drop_culomns], axis=1)
+
+        if column_names is not None:
+            census_df.columns = column_names[code] 
+
+        return census_df
+
+
+def setup_table(conn, table_name, columns, charset="utf8", auto_increment=1):
+    cursor = conn.cursor()
+    
+    sql_commands = f"""
+    DROP TABLE IF EXISTS `{table_name}`;
+    
+    CREATE TABLE IF NOT EXISTS `{table_name}` (
+        {columns}
+    ) DEFAULT CHARSET={charset} AUTO_INCREMENT={auto_increment};
+    """
+    
+    for command in sql_commands.strip().split(';'):
+        if command.strip():
+            cursor.execute(command)
+    
+    conn.commit()
+    print(f"Table `{table_name}` has been created successfully in the database.")
+    cursor.close()
+
+
+def add_key_to_table(conn, table_name, key):
+    cursor = conn.cursor()
+    
+    sql_commands = f"""
+    ALTER TABLE `{table_name}`
+    ADD PRIMARY KEY (`{key}`);
+    """
+    
+    for command in sql_commands.strip().split(';'):
+        if command.strip():
+            cursor.execute(command)
+    
+    conn.commit()
+    print(f"Table `{table_name}` now has primary key `{key}`.")
+    cursor.close()
+
+
+def upload_csv_to_table(conn, table_name, file_name):
+    cur = conn.cursor()
+    cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
+    conn.commit()
+
+
+def upload_census_data_from_df(conn, code, census_df, types=None):
+    table_name = "census_2021_" + code.lower()
+    if types is None:
+        types = ["int(32) unsigned NOT NULL" for _ in census_df.columns]
+        types[0] = "varchar(10) NOT NULL"
+
+    columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
+
+    setup_table(conn, table_name, columns)
+    add_key_to_table(conn, table_name, "id")
+
+    census_df.to_csv("census_upload.csv", index=False)
+    upload_csv_to_table(conn, table_name, "census_upload.csv")
