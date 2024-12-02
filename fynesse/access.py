@@ -227,3 +227,19 @@ def upload_census_data_from_df(conn, code, census_df, types=None):
 
     census_df.to_csv("census_upload.csv", index=False)
     upload_csv_to_table(conn, table_name, "census_upload.csv")
+
+
+def upload_ons_data_from_df(conn, ons_df, types=None):
+    table_name = "census_2021_oas"
+    if types is None:
+        types = ["float(32) NOT NULL" for _ in ons_df.columns]
+        types[0] = "varchar(10) NOT NULL"
+        types[1] = "varchar(10) NOT NULL"
+
+    columns = "".join([f"`{field}` {t},\n" for field, t in zip(ons_df.columns, types)])[:-2]
+
+    setup_table(conn, table_name, columns)
+    add_key_to_table(conn, table_name, "OA")
+
+    ons_df.to_csv("ons_upload.csv", index=False)
+    upload_csv_to_table(conn, table_name, "ons_upload.csv")
