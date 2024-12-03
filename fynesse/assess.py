@@ -208,7 +208,7 @@ def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=
 
     plt.xlabel(field_name)
     plt.ylabel("Goal values")
-    plt.title("Relationship between " + field_name + " and the goal")
+    plt.title("Relationship between " + field_name + " and the mode of transportation")
 
     plt.legend() 
     plt.show() 
