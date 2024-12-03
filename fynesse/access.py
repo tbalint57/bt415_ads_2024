@@ -248,18 +248,14 @@ def query_osm_batch(nodes_file, index_file, latitudes, longitudes, tags=None, di
         idx = index.Index(index_file)
         return nodes, idx
     
-    # Load nodes and index
     nodes, idx = load_index_and_nodes(nodes_file, index_file)
 
-    # Convert distance to degrees
-    delta = distance_km / 111  # Rough conversion from km to lat/lon degrees
+    delta = distance_km / 111
 
     results = []
     for lat, lon in zip(latitudes, longitudes):
-        # Define bounding box for this query
         bbox = (lon - delta, lat - delta, lon + delta, lat + delta)
 
-        # Query the index
         node_indices = list(idx.intersection(bbox))
         filtered_nodes = []
 
