@@ -6,8 +6,11 @@ import osmnx as ox
 import warnings
 import pandas as pd
 import zipfile
+import pickle
 import io
+from rtree import index
 from shapely.geometry import box
+import osmium
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
 """These are the types of import we might expect in this file
@@ -171,6 +174,106 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
             census_df.columns = column_names
 
         return census_df
+
+
+# Project, Task 1
+
+def filter_osm_data_based_on_tags(input_file="uk_filtered.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
+    """
+    Filter the osm data to exclude locations with too little tags.
+    """
+    class NodeFilterHandler(osmium.SimpleHandler):
+        def __init__(self):
+            super(NodeFilterHandler, self).__init__()
+            self.writer = osmium.SimpleWriter(output_file)
+
+        def node(self, n):
+            if len(n.tags) >= min_tags:
+                self.writer.add_node(n)
+
+        def close(self):
+            self.writer.close()
+
+    print("Filtering...")
+    
+    handler = NodeFilterHandler()
+    handler.apply_file(input_file)
+
+    handler.close()
+
+    print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
+
+
+def index_osm_data_on_location(input_file="uk_filtered.osm.pbf", nodes_file="nodes.pkl", index_file="rtree_index"):
+    """
+    Index the osm data on its coordinates: input_file -> nodes_file, rtree_index.
+    """
+    class NodeHandler(osmium.SimpleHandler):
+        def __init__(self):
+            super().__init__()
+            self.nodes = [] 
+
+        def node(self, n):
+            self.nodes.append((n.location.lat, n.location.lon, dict(n.tags)))
+
+    print("Parsing OSM file...")
+    handler = NodeHandler()
+    handler.apply_file(input_file)
+    nodes = handler.nodes
+
+    print(f"Saving {len(nodes)} nodes to {nodes_file}...")
+    with open(nodes_file, 'wb') as f:
+        pickle.dump(nodes, f)
+
+    print("Building R-tree index...")
+    idx = index.Index(index_file)
+    for i, (lat, lon, tags) in enumerate(nodes):
+        idx.insert(i, (lon, lat, lon, lat))
+
+    print(f"Index saved to {index_file}.")
+    return nodes, idx
+
+
+def query_osm_batch(nodes_file, index_file, latitudes, longitudes, tags=None, distance_km=1.0):
+    """
+    Query the OSM data in batch.
+    """
+    def load_index_and_nodes(nodes_file, index_file):
+        """
+        Load nodes and R-tree index from files.
+        """
+        with open(nodes_file, 'rb') as f:
+            nodes = pickle.load(f)
+
+        idx = index.Index(index_file)
+        return nodes, idx
+    
+    # Load nodes and index
+    nodes, idx = load_index_and_nodes(nodes_file, index_file)
+
+    # Convert distance to degrees
+    delta = distance_km / 111  # Rough conversion from km to lat/lon degrees
+
+    results = []
+    for lat, lon in zip(latitudes, longitudes):
+        # Define bounding box for this query
+        bbox = (lon - delta, lat - delta, lon + delta, lat + delta)
+
+        # Query the index
+        node_indices = list(idx.intersection(bbox))
+        filtered_nodes = []
+
+        for i in node_indices:
+            node_lat, node_lon, node_tags = nodes[i]
+            if tags is None or any(tag in node_tags for tag in tags):
+                filtered_nodes.append((node_lat, node_lon, node_tags))
+
+        results.append(filtered_nodes)
+
+    return results
+
+# Project, Task 2
+
 
 
 def setup_table(conn, table_name, columns, charset="utf8", auto_increment=1):
