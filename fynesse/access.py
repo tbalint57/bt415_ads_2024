@@ -265,3 +265,9 @@ def query_AWS_load_table(conn, table_name, columns=None):
     
     df = pd.DataFrame(data, columns=colnames)
     return df
+
+
+def query_AWS_census_data(conn, code, column_names):
+    columns = column_names[code]
+    columns[0] = "OA"
+    return query_AWS_load_table(conn, "census_2021_joined", columns)

@@ -171,3 +171,37 @@ def visualise_relationship(df, column_a, column_b):
     plt.title("Relationship between " + column_a + " and " + column_b)
 
     plt.show()
+
+
+def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
+    df = pd.merge(feature_df, goal_df, on=merge_on)
+
+    for feature_col in feature_df.columns:
+        if feature_col == "OA":
+            continue
+
+        for goal_col in goal_df.columns:
+            if goal_col == "OA":
+                continue
+                
+        a, b = np.polyfit(df[feature_col], df[goal_col], 1)
+        plt.plot(df[feature_col], a*df[feature_col]+b, label=goal_col)
+
+        plt.xlabel(feature_col)
+        plt.ylabel("Goal values")
+        plt.title("Relationship between " + feature_col + " and the goal")
+
+        plt.legend() 
+        plt.show()   
+
+
+def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["OA"]):
+    df = pd.merge(feature_df, goal_df, on=merge_on)
+    
+    plt.figure(figsize=(6, 4))
+    plt.scatter(df[input_col], df[goal_col], alpha=0.7)
+    plt.title(f'{input_col} vs {goal_col}')
+    plt.xlabel(input_col)
+    plt.ylabel(goal_col)
+    plt.grid(True)
+    plt.show()
