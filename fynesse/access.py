@@ -178,7 +178,7 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
 
 # Project, Task 1
 
-def filter_osm_data_based_on_tags(input_file="uk_filtered.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
+def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
     """
     Filter the osm data to exclude locations with too little tags.
     """
