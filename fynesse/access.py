@@ -234,7 +234,7 @@ def index_osm_data_on_location(input_file="uk_filtered.osm.pbf", nodes_file="nod
     return nodes, idx
 
 
-def query_osm_batch(nodes_file, index_file, latitudes, longitudes, tags=None, distance_km=1.0):
+def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="retree_index", tags=None, distance_km=1.0):
     """
     Query the OSM data in batch.
     """
