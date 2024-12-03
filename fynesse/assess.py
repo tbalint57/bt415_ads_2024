@@ -192,7 +192,45 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
         plt.title("Relationship between " + feature_col + " and the goal")
 
         plt.legend() 
-        plt.show()   
+        plt.show()
+
+
+def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
+    feature_df = features_df[merge_on + [field_name]]
+    df = pd.merge(feature_df, goal_df, on=merge_on)
+
+    for goal_col in goal_df.columns:
+        if goal_col in merge_on:
+            continue
+            
+        a, b = np.polyfit(df[field_name], df[goal_col], 1)
+        plt.plot(df[field_name], a*df[field_name]+b, label=goal_col)
+
+    plt.xlabel(field_name)
+    plt.ylabel("Goal values")
+    plt.title("Relationship between " + field_name + " and the goal")
+
+    plt.legend() 
+    plt.show() 
+
+
+def calculate_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
+    feature_df = features_df[merge_on + [field_name]]
+    df = pd.merge(feature_df, goal_df, on=merge_on)
+
+    avg, mx = 0, 0 
+
+    for goal_col in goal_df.columns:
+        if goal_col in merge_on:
+            continue
+            
+        a, b = np.polyfit(df[field_name], df[goal_col], 1)
+        avg += a
+        mx = max(mx, abs(a))
+    
+    avg /= len(goal_df.columns) - 1
+
+    return avg, mx
 
 
 def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["OA"]):
