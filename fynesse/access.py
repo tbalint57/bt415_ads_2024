@@ -10,6 +10,7 @@ import pickle
 import io
 from rtree import index
 from shapely.geometry import box
+from utils import aws_utils
 import osmium
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
@@ -178,6 +179,12 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
 
 # Project, Task 1
 
+
+def upload_ONS_data(conn, base_dir="", file_names=["oa_crds", "oa_hierarchy_mapping.csv"], table_names=[], types=[], keys=[]):
+    for file_name, table_name, type, key in zip(file_names, table_names, types, keys):
+        aws_utils.upload_csv_to_table(conn, file, table_name, type, key)
+
+
 def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
     """
     Filter the osm data to exclude locations with too little tags.
@@ -269,27 +276,6 @@ def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="r
     return results
 
 # Project, Task 2
-
-
-
-def setup_table(conn, table_name, columns, charset="utf8", auto_increment=1):
-    cursor = conn.cursor()
-    
-    sql_commands = f"""
-    DROP TABLE IF EXISTS `{table_name}`;
-    
-    CREATE TABLE IF NOT EXISTS `{table_name}` (
-        {columns}
-    ) DEFAULT CHARSET={charset} AUTO_INCREMENT={auto_increment};
-    """
-    
-    for command in sql_commands.strip().split(';'):
-        if command.strip():
-            cursor.execute(command)
-    
-    conn.commit()
-    print(f"Table `{table_name}` has been created successfully in the database.")
-    cursor.close()
 
 
 def add_key_to_table(conn, table_name, key):
