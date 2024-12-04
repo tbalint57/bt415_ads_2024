@@ -278,81 +278,81 @@ def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="r
 # Project, Task 2
 
 
-def add_key_to_table(conn, table_name, key):
-    cursor = conn.cursor()
+# def add_key_to_table(conn, table_name, key):
+#     cursor = conn.cursor()
     
-    sql_commands = f"""
-    ALTER TABLE `{table_name}`
-    ADD PRIMARY KEY (`{key}`);
-    """
+#     sql_commands = f"""
+#     ALTER TABLE `{table_name}`
+#     ADD PRIMARY KEY (`{key}`);
+#     """
     
-    for command in sql_commands.strip().split(';'):
-        if command.strip():
-            cursor.execute(command)
+#     for command in sql_commands.strip().split(';'):
+#         if command.strip():
+#             cursor.execute(command)
     
-    conn.commit()
-    print(f"Table `{table_name}` now has primary key `{key}`.")
-    cursor.close()
+#     conn.commit()
+#     print(f"Table `{table_name}` now has primary key `{key}`.")
+#     cursor.close()
 
 
-def upload_csv_to_table(conn, table_name, file_name):
-    cur = conn.cursor()
-    cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
-    conn.commit()
+# def upload_csv_to_table(conn, table_name, file_name):
+#     cur = conn.cursor()
+#     cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
+#     conn.commit()
 
 
-def upload_census_data_from_df(conn, code, census_df, key = None, types=None):
-    table_name = "census_2021_" + code
-    if types is None:
-        types = ["float(32) NOT NULL" for _ in census_df.columns]
-        types[0] = "varchar(10) NOT NULL"
+# def upload_census_data_from_df(conn, code, census_df, key = None, types=None):
+#     table_name = "census_2021_" + code
+#     if types is None:
+#         types = ["float(32) NOT NULL" for _ in census_df.columns]
+#         types[0] = "varchar(10) NOT NULL"
 
-    columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
+#     columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
 
-    if key is None:
-        key = code + "_id"
+#     if key is None:
+#         key = code + "_id"
 
-    setup_table(conn, table_name, columns)
-    add_key_to_table(conn, table_name, key)
+#     setup_table(conn, table_name, columns)
+#     add_key_to_table(conn, table_name, key)
 
-    census_df.to_csv("census_upload.csv", index=False)
-    upload_csv_to_table(conn, table_name, "census_upload.csv")
-
-
-def upload_ons_data_from_df(conn, ons_df, types=None):
-    table_name = "census_2021_oas"
-    if types is None:
-        types = ["float(32) NOT NULL" for _ in ons_df.columns]
-        types[0] = "varchar(10) NOT NULL"
-        types[1] = "varchar(10) NOT NULL"
-
-    columns = "".join([f"`{field}` {t},\n" for field, t in zip(ons_df.columns, types)])[:-2]
-
-    setup_table(conn, table_name, columns)
-    add_key_to_table(conn, table_name, "OA")
-
-    ons_df.to_csv("ons_upload.csv", index=False)
-    upload_csv_to_table(conn, table_name, "ons_upload.csv")
+#     census_df.to_csv("census_upload.csv", index=False)
+#     upload_csv_to_table(conn, table_name, "census_upload.csv")
 
 
-def query_AWS_load_table(conn, table_name, columns=None):
-    if columns is None:
-        query_str = f"SELECT * FROM {table_name};"
-    else:
-        cols = ", ".join(columns)
-        query_str = f"SELECT {cols} FROM {table_name};"
+# def upload_ons_data_from_df(conn, ons_df, types=None):
+#     table_name = "census_2021_oas"
+#     if types is None:
+#         types = ["float(32) NOT NULL" for _ in ons_df.columns]
+#         types[0] = "varchar(10) NOT NULL"
+#         types[1] = "varchar(10) NOT NULL"
+
+#     columns = "".join([f"`{field}` {t},\n" for field, t in zip(ons_df.columns, types)])[:-2]
+
+#     setup_table(conn, table_name, columns)
+#     add_key_to_table(conn, table_name, "OA")
+
+#     ons_df.to_csv("ons_upload.csv", index=False)
+#     upload_csv_to_table(conn, table_name, "ons_upload.csv")
+
+
+# def query_AWS_load_table(conn, table_name, columns=None):
+#     if columns is None:
+#         query_str = f"SELECT * FROM {table_name};"
+#     else:
+#         cols = ", ".join(columns)
+#         query_str = f"SELECT {cols} FROM {table_name};"
     
-    cur = conn.cursor()
+#     cur = conn.cursor()
     
-    cur.execute(query_str)
-    data = cur.fetchall()
-    colnames = [desc[0] for desc in cur.description]
+#     cur.execute(query_str)
+#     data = cur.fetchall()
+#     colnames = [desc[0] for desc in cur.description]
     
-    df = pd.DataFrame(data, columns=colnames)
-    return df
+#     df = pd.DataFrame(data, columns=colnames)
+#     return df
 
 
-def query_AWS_census_data(conn, code, column_names):
-    columns = column_names[code]
-    columns[0] = "OA"
-    return query_AWS_load_table(conn, "census_2021_joined", columns)
+# def query_AWS_census_data(conn, code, column_names):
+#     columns = column_names[code]
+#     columns[0] = "OA"
+#     return query_AWS_load_table(conn, "census_2021_joined", columns)
