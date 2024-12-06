@@ -1,4 +1,4 @@
-import pandas_utils
+from . import pandas_utils
 
 def setup_table(conn, table_name, column_names, column_types, charset="utf8", auto_increment=1):
     cursor = conn.cursor()
