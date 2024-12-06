@@ -10,8 +10,7 @@ import pickle
 import io
 from rtree import index
 from shapely.geometry import box
-import utils.aws_utils as aws_utils
-import utils.pandas_utils as pandas_utils
+from .utils import aws_utils, pandas_utils
 from pyproj import Transformer
 import osmium
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
