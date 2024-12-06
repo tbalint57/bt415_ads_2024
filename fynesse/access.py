@@ -194,7 +194,7 @@ def clear_ONS_data_hierarchy(based_dir="", source_file="Output_Area_to_Lower_lay
     hierarchy_df = pandas_utils.load_csv(source_file, ["OA21CD", "LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD22CD", "LAD22NM"])
     hierarchy_df.columns = ["OA", "LSOA", "LSOA_name", "MSOA", "MSOA_name", "LAD", "LAD_name"]
     
-    hierarchy_df.to_csv(os.path.join(based_dir, destination_file))
+    hierarchy_df.to_csv(destination_file)
 
 
 
