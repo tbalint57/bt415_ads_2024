@@ -8,7 +8,9 @@ def load_csv(file_name, columns=None, column_names=None, index=None):
         return df
 
     df = df[columns]
-    df.columns = column_names
+
+    if column_names is not None:
+        df.columns = column_names
 
     if index is None:
         return df
