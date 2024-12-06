@@ -10,7 +10,8 @@ import pickle
 import io
 from rtree import index
 from shapely.geometry import box
-from utils import aws_utils
+from utils import aws_utils, pandas_utils
+from pyproj import Transformer
 import osmium
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
@@ -180,9 +181,43 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
 # Project, Task 1
 
 
-def upload_ONS_data(conn, base_dir="", file_names=["oa_crds", "oa_hierarchy_mapping.csv"], table_names=[], types=[], keys=[]):
-    for file_name, table_name, type, key in zip(file_names, table_names, types, keys):
-        aws_utils.upload_csv_to_table(conn, file, table_name, type, key)
+def clear_ONS_data_cords(based_dir="", source_name="Output_Areas_2021_PWC_V3_1988140134396269925.csv", destination_name="oa_cords.csv"):
+    cords_df = pandas_utils.load_csv(os.path.join(based_dir, source_name), ["OA21CD", "x", "y"])
+
+    transformer = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
+    cords_df[['y', 'x']] = cords_df.apply(lambda row: pd.Series(transformer.transform(row['x'], row['y'])), axis=1)
+    cords_df.columns = ["OA", "long", "lat"]
+    cords_df.to_csv(os.path.join(based_dir, destination_name))
+
+
+def clear_ONS_data_hierarchy(based_dir="", source_name="Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv", destination_name="oa_hierarchy_mappings.csv"):
+    hierarchy_df = pandas_utils.load_csv(os.path.join(based_dir, source_name), ["OA21CD", "LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD22CD", "LAD22NM"])
+    hierarchy_df.columns = ["OA", "LSOA", "LSOA_name", "MSOA", "MSOA_name", "LAD", "LAD_name"]
+    
+    hierarchy_df.to_csv(os.path.join(based_dir, destination_name))
+
+
+
+def upload_ONS_data(conn, base_dir="", 
+                    source_file_names = ["Output_Areas_2021_PWC_V3_1988140134396269925.csv", "Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv"],
+                    destination_file_names=["oa_crds.csv", "oa_hierarchy_mapping.csv"], 
+                    table_names=["oa_cords", "oa_hierarchy_mapping"], 
+                    types=[["int(16)", "varchar(16)", "float(32)", "float(32)"], ["varchar(16)", "varchar(16)", "varchar(50)"]], 
+                    keys=[]):
+    
+    source_files = [os.path.join(base_dir, source_file_name) for source_file_name in source_file_names]
+    destination_files = [os.path.join(base_dir, destination_file_name) for destination_file_name in destination_file_names]
+
+    clear_ONS_data_cords(base_dir, source_files[0], destination_files[0])
+    clear_ONS_data_hierarchy(base_dir, source_files[1], destination_files[1])
+    
+    for destination_file, table_name, type, key in zip(destination_files, table_names, types, keys):
+        aws_utils.upload_csv_to_table(conn, destination_file, table_name, type, key)
+
+
+
+
+
 
 
 def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
