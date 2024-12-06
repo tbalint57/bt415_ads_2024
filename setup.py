@@ -35,7 +35,7 @@ EXTRAS = {
     "interactive html plots": ["bokeh",],
 }
 
-PACKAGE_DATA = {"fynesse": ["defaults.yml"]}
+PACKAGE_DATA = {"fynesse": ["defaults.yml", "utils/*"]}
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
