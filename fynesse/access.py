@@ -208,11 +208,16 @@ def upload_ONS_data(conn, base_dir="",
     source_files = [os.path.join(base_dir, source_file_name) for source_file_name in source_file_names]
     destination_files = [os.path.join(base_dir, destination_file_name) for destination_file_name in destination_file_names]
 
+    print("Clear ONS Coordinates Data")
     clear_ONS_data_cords(source_files[0], destination_files[0])
+    print("Clear ONS Hierarchy Data")
     clear_ONS_data_hierarchy(source_files[1], destination_files[1])
     
+    print("Uploading Cleared ONS Data To AWS")
     for destination_file, table_name, type, key in zip(destination_files, table_names, types, keys):
         aws_utils.upload_csv_to_table(conn, destination_file, table_name, type, key)
+
+    print("ONS Data Uploaded Successfully!")
 
 
 
