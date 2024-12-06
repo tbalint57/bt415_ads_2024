@@ -42,14 +42,17 @@ def add_key_to_table(conn, table_name, key):
 
 
 def upload_csv_to_table(conn, table_name, file_name):
-    print(f"Uploading `{file_name}` to table `{table_name}`...")
     cur = conn.cursor()
     cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
     conn.commit()
-    print(f"Uploaded `{file_name}` to table `{table_name}` successfully!")
 
 
-def upload_csv_to_table(conn, file, table_name, type, key):
+def upload_data(conn, file, table_name, type, key):
+    print(f"Uploading `{file}` to table `{table_name}`...")
     file_df = pandas_utils.load_csv(file)
+    
     setup_table(conn, table_name, file_df.columns, type)
     add_key_to_table(conn, table_name, key)
+    upload_csv_to_table(conn, table_name, file)
+
+    print(f"Uploaded `{file}` to table `{table_name}` successfully!")
