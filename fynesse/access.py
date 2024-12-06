@@ -181,20 +181,20 @@ def load_census_data(code, drop_culomns=None, column_names=None, ):
 # Project, Task 1
 
 
-def clear_ONS_data_cords(based_dir="", source_name="Output_Areas_2021_PWC_V3_1988140134396269925.csv", destination_name="oa_cords.csv"):
-    cords_df = pandas_utils.load_csv(os.path.join(based_dir, source_name), ["OA21CD", "x", "y"])
+def clear_ONS_data_cords(source_file="Output_Areas_2021_PWC_V3_1988140134396269925.csv", destination_file="oa_cords.csv"):
+    cords_df = pandas_utils.load_csv(source_file, ["OA21CD", "x", "y"])
 
     transformer = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
     cords_df[['y', 'x']] = cords_df.apply(lambda row: pd.Series(transformer.transform(row['x'], row['y'])), axis=1)
     cords_df.columns = ["OA", "long", "lat"]
-    cords_df.to_csv(os.path.join(based_dir, destination_name))
+    cords_df.to_csv(destination_file)
 
 
-def clear_ONS_data_hierarchy(based_dir="", source_name="Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv", destination_name="oa_hierarchy_mappings.csv"):
-    hierarchy_df = pandas_utils.load_csv(os.path.join(based_dir, source_name), ["OA21CD", "LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD22CD", "LAD22NM"])
+def clear_ONS_data_hierarchy(based_dir="", source_file="Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv", destination_file="oa_hierarchy_mappings.csv"):
+    hierarchy_df = pandas_utils.load_csv(source_file, ["OA21CD", "LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD22CD", "LAD22NM"])
     hierarchy_df.columns = ["OA", "LSOA", "LSOA_name", "MSOA", "MSOA_name", "LAD", "LAD_name"]
     
-    hierarchy_df.to_csv(os.path.join(based_dir, destination_name))
+    hierarchy_df.to_csv(os.path.join(based_dir, destination_file))
 
 
 
@@ -208,8 +208,8 @@ def upload_ONS_data(conn, base_dir="",
     source_files = [os.path.join(base_dir, source_file_name) for source_file_name in source_file_names]
     destination_files = [os.path.join(base_dir, destination_file_name) for destination_file_name in destination_file_names]
 
-    clear_ONS_data_cords(base_dir, source_files[0], destination_files[0])
-    clear_ONS_data_hierarchy(base_dir, source_files[1], destination_files[1])
+    clear_ONS_data_cords(source_files[0], destination_files[0])
+    clear_ONS_data_hierarchy(source_files[1], destination_files[1])
     
     for destination_file, table_name, type, key in zip(destination_files, table_names, types, keys):
         aws_utils.upload_csv_to_table(conn, destination_file, table_name, type, key)
