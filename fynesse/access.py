@@ -215,7 +215,7 @@ def upload_ONS_data(conn, base_dir="",
     
     print("Uploading Cleared ONS Data To AWS")
     for destination_file, table_name, type, key in zip(destination_files, table_names, types, keys):
-        aws_utils.upload_csv_to_table(conn, destination_file, table_name, type, key)
+        aws_utils.upload_data_from_file(conn, destination_file, table_name, type, key)
 
     print("ONS Data Uploaded Successfully!")
 

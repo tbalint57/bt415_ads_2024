@@ -47,7 +47,7 @@ def upload_csv_to_table(conn, table_name, file_name):
     conn.commit()
 
 
-def upload_data(conn, file, table_name, type, key):
+def upload_data_from_file(conn, file, table_name, type, key):
     print(f"Uploading `{file}` to table `{table_name}`...")
     file_df = pandas_utils.load_csv(file)
     
