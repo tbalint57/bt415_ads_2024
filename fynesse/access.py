@@ -299,6 +299,7 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
     print(joined_types)
     print(joined_df.columns)
     aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
+    print("Census Data Successfully Uploaded!")
 
 
 def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
