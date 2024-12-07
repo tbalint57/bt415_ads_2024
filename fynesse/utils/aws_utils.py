@@ -1,4 +1,5 @@
 from . import pandas_utils
+import pandas as pd
 
 def setup_table(conn, table_name, column_names, column_types, charset="utf8", auto_increment=1):
     cursor = conn.cursor()
@@ -56,3 +57,30 @@ def upload_data_from_file(conn, file, table_name, type, key):
     upload_csv_to_table(conn, table_name, file)
 
     print(f"Uploaded `{file}` to table `{table_name}` successfully!")
+
+
+def query_AWS_load_table(conn, table_name, columns=None):
+    if columns is None:
+        query_str = f"SELECT * FROM {table_name};"
+    else:
+        cols = ", ".join(columns)
+        query_str = f"SELECT {cols} FROM {table_name};"
+    
+    cur = conn.cursor()
+    
+    cur.execute(query_str)
+    data = cur.fetchall()
+    colnames = [desc[0] for desc in cur.description]
+    
+    df = pd.DataFrame(data, columns=colnames)
+    return df
+
+
+def upload_data_from_df(conn, df, table_name, types, key):
+    columns = "".join([f"`{field}` {t},\n" for field, t in zip(df.columns, types)])[:-2]
+
+    setup_table(conn, table_name, columns)
+    add_key_to_table(conn, table_name, key)
+
+    df.to_csv("upload_temp.csv", index=False)
+    upload_csv_to_table(conn, table_name, "upload_temp.csv")

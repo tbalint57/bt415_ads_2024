@@ -161,12 +161,12 @@ def load_csv(file_name, columns=None, column_names=None, index=None):
     return df
 
 
-def load_census_data(code, drop_culomns=None, column_names=None, ):
+def load_census_data(code, base_dir=".", drop_culomns=None, column_names=None):
     try:
-        census_df = load_csv(f'census2021-{code.lower()}/census2021-{code.lower()}-oa.csv')
+        census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-oa.csv')
 
     except FileNotFoundError:
-        census_df = load_csv(f'census2021-{code.lower()}/census2021-{code.lower()}-msoa.csv')
+        census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-msoa.csv')
 
     finally:
         if drop_culomns is not None:
@@ -220,9 +220,83 @@ def upload_ONS_data(conn, base_dir="",
     print("ONS Data Uploaded Successfully!")
 
 
+def upload_census_data(conn, base_dir=["census_data"], columns_to_drop=None, column_names=None, no_oa_data=None, oa_cords_table_name="oa_cords", oa_hierarchy_table_name="oa_hierarchy_mapping"):
+    if columns_to_drop is None:
+        columns_to_drop = {
+        "TS001": [0, 1, 3],
+        "TS002": [0, 1, 3, 5, 6, 9, 13, 14, 16, 17, 19, 20],
+        "TS003": [0, 1, 3, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24],
+        "TS007": [0, 1, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115],
+        "TS011": [0, 1, 3],
+        "TS017": [0, 1, 3],
+        "TS037": [0, 1, 3],
+        "TS038": [0, 1, 3, 4, 7],
+        "TS039": [0, 1, 3, 6, 7, 9, 10],
+        "TS058": [0, 1, 3],
+        "TS059": [0, 1, 3, 4, 7],
+        "TS060": [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43, 44, 45, 47, 49, 50, 51, 52, 54, 55, 56, 57, 58, 60, 61, 63, 64, 65, 66, 67, 68, 70, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 91, 93, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
+        "TS061": [0, 1, 3, 4],
+        "TS062": [0, 1, 3],
+        "TS063": [0, 1, 3],
+        "TS065": [0, 1, 3],
+        "TS066": [0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32],
+        "TS067": [0, 1, 3],
+        "TS068": [0, 1, 3],
+    }
 
+    if column_names is None:
+        column_names = {
+        "TS001": ["id", "household", "communal"],
+        "TS002": ["id", "never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
+        "TS003": ["id", "one_person", "single_family", "other"],
+        "TS007": ["id", "4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
+        "TS011": ["id", "0", "1", "2", "3", "4"],
+        "TS017": ["id", "0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
+        "TS037": ["id", "very_good", "good", "fair", "bad", "very_bad"],
+        "TS038": ["id", "limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
+        "TS039": ["id", "none", "19_minus", "20_to_49", "50_plus"],
+        "TS058": ["id", "2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
+        "TS059": ["id", "15_minus", "16_to_30", "31_to_48", "49_plus"],
+        "TS060": ["id", "A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
+        "TS061": ["id", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
+        "TS062": ["id", "L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
+        "TS063": ["id", "manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
+        "TS065": ["id", "employed", "unemployed", "never_been_employed"],
+        "TS066": ["id", "active_non_student", "active_student", "inactive", "other"],
+        "TS067": ["id", "none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
+        "TS068": ["id", "student", "not_student"]
+    }
 
+    if no_oa_data is None:
+        no_oa_data = ["TS007", "TS060"]
 
+    codes = column_names.keys()
+
+    for code in codes:
+        column_names[code] = [code + "_" + column_name for column_name in column_names[code]]
+
+    joined_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
+    joined_types = ["varchar(16)", "float(32)", "float(32)"]
+    oa_hierarchy = aws_utils.query_AWS_load_table(conn, oa_hierarchy_table_name)
+
+    for code in codes:
+        print(f"Downloading census data for code {code}")
+        download_census_data(code, base_dir=base_dir)
+        print(f"Cleaning up census data for code {code}")
+        census_df = load_census_data(code, base_dir, columns_to_drop[code], column_names[code])
+
+        if code in no_oa_data:
+            census_df.rename(columns={census_df.columns[0]: "MSOA"}, inplace=True)
+            census_df = pd.merge(oa_hierarchy[["OA", "MSOA"]], census_df, on=["MSOA"], how="inner").drop(["MSOA"], axis=1)
+
+        census_df.rename(columns={census_df.columns[0]: "OA"}, inplace=True)
+        
+        print(f"Merging census data for code {code}")
+        joined_df = pd.merge(joined_df, census_df, on=["OA"], how="inner")
+    
+    print(f"Uploading census data")
+    joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
+    aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
 
 
 def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
