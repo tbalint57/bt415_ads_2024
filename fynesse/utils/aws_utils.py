@@ -14,8 +14,6 @@ def setup_table(conn, table_name, column_names, column_types, charset="utf8", au
     {columns}
     ) DEFAULT CHARSET={charset} AUTO_INCREMENT={auto_increment};
     """
-
-    print(sql_commands)
     
     for command in sql_commands.strip().split(';'):
         if command.strip():
@@ -44,7 +42,6 @@ def add_key_to_table(conn, table_name, key):
 
 
 def upload_csv_to_table(conn, table_name, file_name):
-    print(f"upload_csv_to_table({conn}, {table_name}, {file_name})")
     cur = conn.cursor()
     cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
     conn.commit()
