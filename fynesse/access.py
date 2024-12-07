@@ -205,8 +205,8 @@ def upload_ONS_data(conn, base_dir="",
                     types=[["varchar(16)", "float(32)", "float(32)"], ["varchar(16)", "varchar(16)", "varchar(50)", "varchar(16)", "varchar(50)", "varchar(16)", "varchar(50)"]], 
                     keys=["OA", "OA"]):
     
-    source_files = [os.path.join(base_dir, source_file_name) for source_file_name in source_file_names]
-    destination_files = [os.path.join(base_dir, destination_file_name) for destination_file_name in destination_file_names]
+    source_files = [base_dir + "/" + source_file_name for source_file_name in source_file_names]
+    destination_files = [base_dir + "/" + destination_file_name for destination_file_name in destination_file_names]
 
     print("Clear ONS Coordinates Data")
     clear_ONS_data_cords(source_files[0], destination_files[0])
