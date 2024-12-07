@@ -302,6 +302,119 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
     print("Census Data Successfully Uploaded!")
 
 
+def process_OSM_data():
+    class NodeFilterHandlerFilter(osmium.SimpleHandler):
+        def __init__(self):
+            super(NodeFilterHandlerFilter, self).__init__()
+            self.writer = osmium.SimpleWriter("uk_super_filtered.osm.pbf")
+
+        def node(self, n):
+            # Check if the node has two or more tags
+            if len(n.tags) > 2:
+                self.writer.add_node(n)
+
+        def close(self):
+            self.writer.close()
+
+    input_file = "uk_filtered.osm.pbf"
+
+    print("cleaning started")
+    
+    handler = NodeFilterHandlerFilter()
+    handler.apply_file(input_file, locations=False)
+
+    handler.close()
+
+    print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
+
+
+
+
+    class NodeHandlerIndexer(osmium.SimpleHandler):
+        def __init__(self):
+            super().__init__()
+            self.grid_nodes = {} 
+
+        def get_grid_keys(self, lat, lon):
+            keys = []
+            base_lat = int(lat // 2 * 2)
+            base_lon = int(lon // 2 * 2) 
+
+            for lat_offset in [0, -2, 2]:
+                for lon_offset in [0, -2, 2]:
+                    grid_lat = base_lat + lat_offset
+                    grid_lon = base_lon + lon_offset
+
+                    # Only include grids that overlap within the extended range (0.05 buffer)
+                    if grid_lat - 0.05 <= lat <= grid_lat + 2.05 and grid_lon - 0.05 <= lon <= grid_lon + 2.05:
+                        keys.append((grid_lat, grid_lon))
+
+            return keys
+
+        def node(self, n):
+            grid_keys = self.get_grid_keys(n.location.lat, n.location.lon)
+            for key in grid_keys:
+                if key not in self.grid_nodes:
+                    self.grid_nodes[key] = []
+                self.grid_nodes[key].append((n.location.lat, n.location.lon, dict(n.tags)))
+
+
+    def build_and_save_index(osm_file, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        print("Parsing OSM file...")
+        handler = NodeHandlerIndexer()
+        handler.apply_file(osm_file)
+
+        for (lat_min, lon_min), nodes in handler.grid_nodes.items():
+            grid_key = f"{lat_min}_{lon_min}"
+            nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
+            index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
+
+            print(f"Saving {len(nodes)} nodes for grid {grid_key}...")
+
+            with open(nodes_file, 'wb') as f:
+                pickle.dump(nodes, f)
+
+            print(f"Building R-tree index for grid {grid_key}...")
+            idx = index.Index(index_file)
+            for i, (lat, lon, tags) in enumerate(nodes):
+                idx.insert(i, (lon, lat, lon, lat))
+            print(f"Index for grid {grid_key} saved.")
+
+        print("All grids processed and saved.")
+
+
+    def load_index_and_nodes(output_dir, lat_min, lon_min):
+        """
+        Load nodes and R-tree index for a specific grid square.
+        """
+        grid_key = f"{lat_min}_{lon_min}"
+        nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
+        index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
+
+        print(f"Loading nodes for grid {grid_key} from {nodes_file}...")
+        with open(nodes_file, 'rb') as f:
+            nodes = pickle.load(f)
+
+        print(f"Loading R-tree index for grid {grid_key} from {index_file}...")
+        idx = index.Index(index_file)
+        return nodes, idx
+
+
+    osm_file = "uk_filtered.osm.pbf"
+    output_dir = "grid_data"
+
+    print("started working")
+
+    if not os.path.exists(output_dir):
+        print("Building and saving grid-based indexes...")
+        build_and_save_index(osm_file, output_dir)
+    else:
+        print("Grid-based indexes already exist, proceeding to query...")
+
+
 def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
     """
     Filter the osm data to exclude locations with too little tags.
