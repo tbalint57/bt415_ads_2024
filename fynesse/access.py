@@ -220,7 +220,7 @@ def upload_ONS_data(conn, base_dir="",
     print("ONS Data Uploaded Successfully!")
 
 
-def upload_census_data(conn, base_dir=["census_data"], columns_to_drop=None, column_names=None, no_oa_data=None, oa_cords_table_name="oa_cords", oa_hierarchy_table_name="oa_hierarchy_mapping"):
+def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, column_names=None, no_oa_data=None, oa_cords_table_name="oa_cords", oa_hierarchy_table_name="oa_hierarchy_mapping"):
     if columns_to_drop is None:
         columns_to_drop = {
         "TS001": [0, 1, 3],
