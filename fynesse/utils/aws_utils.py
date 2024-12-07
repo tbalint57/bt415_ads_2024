@@ -79,9 +79,8 @@ def query_AWS_load_table(conn, table_name, columns=None):
 
 
 def upload_data_from_df(conn, df, table_name, types, key):
-    columns = "".join([f"`{field}` {t},\n" for field, t in zip(df.columns, types)])[:-2]
 
-    setup_table(conn, table_name, columns, types)
+    setup_table(conn, table_name, df.columns, types)
     add_key_to_table(conn, table_name, key)
 
     df.to_csv("upload_temp.csv", index=False)
