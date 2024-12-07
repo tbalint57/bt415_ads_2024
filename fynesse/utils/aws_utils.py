@@ -15,6 +15,8 @@ def setup_table(conn, table_name, column_names, column_types, charset="utf8", au
     {columns}
     ) DEFAULT CHARSET={charset} AUTO_INCREMENT={auto_increment};
     """
+
+    print(sql_commands)
     
     for command in sql_commands.strip().split(';'):
         if command.strip():
