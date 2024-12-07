@@ -4,14 +4,14 @@ def setup_table(conn, table_name, column_names, column_types, charset="utf8", au
     cursor = conn.cursor()
     columns = ""
     for column_name, column_type in zip(column_names, column_types):
-        columns += column_name + " " + column_type + ",\n"
+        columns += f"`{column_name}` {column_type},\n"
     columns = columns[:-2]
 
     sql_commands = f"""
     DROP TABLE IF EXISTS `{table_name}`;
     
     CREATE TABLE IF NOT EXISTS `{table_name}` (
-        `{columns}`
+    {columns}
     ) DEFAULT CHARSET={charset} AUTO_INCREMENT={auto_increment};
     """
 
