@@ -203,7 +203,7 @@ def upload_ONS_data(conn, base_dir="",
                     destination_file_names=["oa_crds.csv", "oa_hierarchy_mapping.csv"], 
                     table_names=["oa_cords", "oa_hierarchy_mapping"], 
                     types=[["int(16)", "varchar(16)", "float(32)", "float(32)"], ["varchar(16)", "varchar(16)", "varchar(50)"]], 
-                    keys=[]):
+                    keys=["OA", "OA"]):
     
     source_files = [os.path.join(base_dir, source_file_name) for source_file_name in source_file_names]
     destination_files = [os.path.join(base_dir, destination_file_name) for destination_file_name in destination_file_names]
