@@ -296,6 +296,7 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
     
     print(f"Uploading census data")
     joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
+    print(joined_types)
     aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
 
 
