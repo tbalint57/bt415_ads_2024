@@ -178,7 +178,7 @@ def load_census_data(code, base_dir=".", drop_culomns=None, column_names=None):
         return census_df
 
 
-# Project, Task 1
+# ONS
 
 
 def clear_ONS_data_cords(source_file="Output_Areas_2021_PWC_V3_1988140134396269925.csv", destination_file="oa_cords.csv"):
@@ -195,7 +195,6 @@ def clear_ONS_data_hierarchy(source_file="Output_Area_to_Lower_layer_Super_Outpu
     hierarchy_df.columns = ["OA", "LSOA", "LSOA_name", "MSOA", "MSOA_name", "LAD", "LAD_name"]
     
     hierarchy_df.to_csv(destination_file, index=False)
-
 
 
 def upload_ONS_data(conn, base_dir="", 
@@ -218,6 +217,9 @@ def upload_ONS_data(conn, base_dir="",
         aws_utils.upload_data_from_file(conn, destination_file, table_name, type, key)
 
     print("ONS Data Uploaded Successfully!")
+
+
+# Cesnus
 
 
 def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, column_names=None, no_oa_data=None, oa_cords_table_name="oa_cords", oa_hierarchy_table_name="oa_hierarchy_mapping"):
@@ -302,11 +304,13 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
     print("Census Data Successfully Uploaded!")
 
 
-def process_OSM_data(osm_file="uk_filtered.osm.pbf", output_dir="osm_data"):
+#OSM
+
+def process_OSM_data(osm_file="uk.osm.pbf", output_dir="osm_data"):
     class NodeFilterHandlerFilter(osmium.SimpleHandler):
         def __init__(self):
             super(NodeFilterHandlerFilter, self).__init__()
-            self.writer = osmium.SimpleWriter("uk_super_filtered.osm.pbf")
+            self.writer = osmium.SimpleWriter("uk_filtered.osm.pbf")
 
         def node(self, n):
             # Check if the node has two or more tags
@@ -316,14 +320,14 @@ def process_OSM_data(osm_file="uk_filtered.osm.pbf", output_dir="osm_data"):
         def close(self):
             self.writer.close()
 
-    print("cleaning started")
+    print("Filtering...")
     
     handler = NodeFilterHandlerFilter()
     handler.apply_file(osm_file, locations=False)
 
     handler.close()
 
-    print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
+    print("Filtering complete. Output written to 'uk_filtered.osm.pbf'.")
 
 
     class NodeHandlerIndexer(osmium.SimpleHandler):
@@ -382,7 +386,6 @@ def process_OSM_data(osm_file="uk_filtered.osm.pbf", output_dir="osm_data"):
         print("All grids processed and saved.")
 
     osm_file = "uk_filtered.osm.pbf"
-    output_dir = "grid_data"
 
     print("started working")
 
@@ -390,38 +393,9 @@ def process_OSM_data(osm_file="uk_filtered.osm.pbf", output_dir="osm_data"):
         print("Building and saving grid-based indexes...")
         build_and_save_index(osm_file, output_dir)
     else:
-        print("Grid-based indexes already exist, proceeding to query...")
+        print("Grid-based indexes already exist.")
 
-
-def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filtered.osm.pbf", min_tags=2):
-    """
-    Filter the osm data to exclude locations with too little tags.
-    """
-    class NodeFilterHandler(osmium.SimpleHandler):
-        def __init__(self):
-            super(NodeFilterHandler, self).__init__()
-            self.writer = osmium.SimpleWriter(output_file)
-
-        def node(self, n):
-            if len(n.tags) >= min_tags:
-                self.writer.add_node(n)
-
-        def close(self):
-            self.writer.close()
-
-    print("Filtering...")
-    
-    handler = NodeFilterHandler()
-    handler.apply_file(input_file)
-
-    handler.close()
-
-    print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
-
-
-def transform_OSM_data(osm_file="uk.osm.pbf", output_dir="osm_data"):
-    filter_osm_data_based_on_tags(osm_file)
-    process_OSM_data(output_dir=output_dir)
+    print(f"OSM data processed in {output_dir}")
 
 
 def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="retree_index", tags=None, distance_km=1.0):
