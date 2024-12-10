@@ -321,7 +321,7 @@ def upload_census_data(conn,
         print(f"Downloading census data for code {code}")
         download_census_data(code, base_dir=base_dir)
         print(f"Cleaning up census data for code {code}")
-        partition, census_df = load_census_data_smallest_partition(code, base_dir, "oa", columns_to_drop[code], column_names[code])
+        partition, census_df = load_census_data_smallest_partition(code, base_dir, columns_to_drop[code], column_names[code])
 
         if partition != "OA":
             census_df.rename(columns={census_df.columns[0]: partition}, inplace=True)
