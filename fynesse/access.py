@@ -372,16 +372,16 @@ def process_OSM_data(osm_file="uk.osm.pbf",
 
         def get_grid_keys(self, lat, lon):
             keys = []
-            base_lat = int(lat // 2 * 2)
-            base_lon = int(lon // 2 * 2) 
+            base_lat = int(lat)
+            base_lon = int(lon) 
 
-            for lat_offset in [0, -2, 2]:
-                for lon_offset in [0, -2, 2]:
+            for lat_offset in [0, -1, 1]:
+                for lon_offset in [0, -1, 1]:
                     grid_lat = base_lat + lat_offset
                     grid_lon = base_lon + lon_offset
 
                     # Only include grids that overlap within the extended range (0.05 buffer)
-                    if grid_lat - 0.05 <= lat <= grid_lat + 2.05 and grid_lon - 0.05 <= lon <= grid_lon + 2.05:
+                    if grid_lat - 0.05 <= lat <= grid_lat + 1.05 and grid_lon - 0.05 <= lon <= grid_lon + 1.05:
                         keys.append((grid_lat, grid_lon))
 
             return keys
