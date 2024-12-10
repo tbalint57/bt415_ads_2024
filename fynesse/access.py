@@ -349,7 +349,7 @@ def process_OSM_data(osm_file="uk.osm.pbf",
 
         def node(self, n):
             # Check if the node has two or more tags
-            if len(n.tags) > 2:
+            if len(n.tags) >= 2:
                 self.writer.add_node(n)
 
         def close(self):
