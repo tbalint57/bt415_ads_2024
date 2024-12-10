@@ -270,7 +270,8 @@ def upload_census_data(conn,
         "TS066": [0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32],
         "TS067": [0, 1, 3],
         "TS068": [0, 1, 3],
-        "TS070": [0, 1, 3],
+        "TS077": [0, 1, 3],
+        "TS078": [0, 1, 3],
     }
 
     if column_names is None:
@@ -303,8 +304,8 @@ def upload_census_data(conn,
         "TS066": ["id", "active_non_student", "active_student", "inactive", "other"],
         "TS067": ["id", "none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
         "TS068": ["id", "student", "not_student"],
-        "TS070": ["id", "same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "non_binary", "other", "no_answer"],
         "TS077": ["id", "heterosexual", "homosexual", "bisexual", "other", "no_answer"],
+        "TS078": ["id", "same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "other", "no_answer"]
     }
 
     codes = column_names.keys()
