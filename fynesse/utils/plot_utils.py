@@ -29,6 +29,8 @@ def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylab
 
 
 def visualise_output_values(feature_arrays, feature_labels=None, title=None):
+    print(len(feature_arrays), len(feature_labels))
+
     sorted_arrays = [np.sort(np.copy(feature_array)) for feature_array in feature_arrays]
 
     plot_arrays(sorted_arrays, labels=feature_labels, title=title, xlabel="n-th lowest value", ylabel="value")
