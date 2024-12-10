@@ -13,6 +13,7 @@ from shapely.geometry import box
 from .utils import aws_utils, pandas_utils
 from pyproj import Transformer
 import osmium
+import math
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
 """These are the types of import we might expect in this file
@@ -43,7 +44,7 @@ def download_price_paid_data(year_from, year_to):
     # File name with placeholders
     file_name = "/pp-<year>-part<part>.csv"
     for year in range(year_from, (year_to+1)):
-        print (f"Downloading data for year: {year}")
+        print(f"Downloading data for year: {year}")
         for part in range(1,3):
             url = base_url + file_name.replace("<year>", str(year)).replace("<part>", str(part))
             response = requests.get(url)
@@ -372,8 +373,8 @@ def process_OSM_data(osm_file="uk.osm.pbf",
 
         def get_grid_keys(self, lat, lon):
             keys = []
-            base_lat = int(lat)
-            base_lon = int(lon) 
+            base_lat = math.floor(lat)
+            base_lon = math.floor(lon)
 
             for lat_offset in [0, -1, 1]:
                 for lon_offset in [0, -1, 1]:
@@ -431,37 +432,38 @@ def process_OSM_data(osm_file="uk.osm.pbf",
     print(f"OSM data processed in {output_dir}")
 
 
-def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="retree_index", tags=None, distance_km=1.0):
+def load_index_and_nodes(output_dir, lat_min, lon_min):
     """
-    Query the OSM data in batch.
+    Load nodes and R-tree index for a specific grid square.
     """
-    def load_index_and_nodes(nodes_file, index_file):
-        """
-        Load nodes and R-tree index from files.
-        """
-        with open(nodes_file, 'rb') as f:
-            nodes = pickle.load(f)
+    grid_key = f"{lat_min}_{lon_min}"
+    nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
+    index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
 
-        idx = index.Index(index_file)
-        return nodes, idx
-    
-    nodes, idx = load_index_and_nodes(nodes_file, index_file)
+    print(f"Loading nodes for grid {grid_key} from {nodes_file}...")
+    with open(nodes_file, 'rb') as f:
+        nodes = pickle.load(f)
 
-    delta = distance_km / 111
+    print(f"Loading R-tree index for grid {grid_key} from {index_file}...")
+    idx = index.Index(index_file)
+    return nodes, idx
 
-    results = []
-    for lat, lon in zip(latitudes, longitudes):
-        bbox = (lon - delta, lat - delta, lon + delta, lat + delta)
 
-        node_indices = list(idx.intersection(bbox))
-        filtered_nodes = []
+def query_OSM_batch(osm_dir, points, distance_km):
+    """
+    Batch query OSM nodes for multiple points in the same grid.
+    """
+    lat0, lon0 = points[0]
+    lat0, lon0 = math.floor(lat0), math.floor(lon0)
 
-        for i in node_indices:
-            node_lat, node_lon, node_tags = nodes[i]
-            if tags is None or any(tag in node_tags for tag in tags):
-                filtered_nodes.append((node_lat, node_lon, node_tags))
+    nodes, idx = load_index_and_nodes(osm_dir, lat0, lon0)
+    distance_cords = distance_km / 111
+    distance_cords /= 2
 
-        results.append(filtered_nodes)
+    results = {}
+    for lat, lon in points:
+        bbox = (lon - distance_cords, lat - distance_cords, lon + distance_cords, lat + distance_cords)
+        results[(lat, lon)] = [nodes[i] for i in idx.intersection(bbox)]
 
     return results
 
