@@ -302,7 +302,7 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
     print("Census Data Successfully Uploaded!")
 
 
-def process_OSM_data():
+def process_OSM_data(osm_file="uk_filtered.osm.pbf", output_dir="osm_data"):
     class NodeFilterHandlerFilter(osmium.SimpleHandler):
         def __init__(self):
             super(NodeFilterHandlerFilter, self).__init__()
@@ -316,18 +316,14 @@ def process_OSM_data():
         def close(self):
             self.writer.close()
 
-    input_file = "uk_filtered.osm.pbf"
-
     print("cleaning started")
     
     handler = NodeFilterHandlerFilter()
-    handler.apply_file(input_file, locations=False)
+    handler.apply_file(osm_file, locations=False)
 
     handler.close()
 
     print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
-
-
 
 
     class NodeHandlerIndexer(osmium.SimpleHandler):
@@ -385,24 +381,6 @@ def process_OSM_data():
 
         print("All grids processed and saved.")
 
-
-    def load_index_and_nodes(output_dir, lat_min, lon_min):
-        """
-        Load nodes and R-tree index for a specific grid square.
-        """
-        grid_key = f"{lat_min}_{lon_min}"
-        nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
-        index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
-
-        print(f"Loading nodes for grid {grid_key} from {nodes_file}...")
-        with open(nodes_file, 'rb') as f:
-            nodes = pickle.load(f)
-
-        print(f"Loading R-tree index for grid {grid_key} from {index_file}...")
-        idx = index.Index(index_file)
-        return nodes, idx
-
-
     osm_file = "uk_filtered.osm.pbf"
     output_dir = "grid_data"
 
@@ -439,6 +417,11 @@ def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filte
     handler.close()
 
     print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
+
+
+def transform_OSM_data(osm_file="uk.osm.pbf", output_dir="osm_data"):
+    filter_osm_data_based_on_tags(osm_file)
+    process_OSM_data(output_dir=output_dir)
 
 
 def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="retree_index", tags=None, distance_km=1.0):
