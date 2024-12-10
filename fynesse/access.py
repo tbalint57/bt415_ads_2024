@@ -164,11 +164,7 @@ def load_csv(file_name, columns=None, column_names=None, index=None):
 def load_census_data(code, base_dir=".", partition="oa", drop_culomns=None, column_names=None):
     try:
         census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-{partition}.csv')
-
-    except FileNotFoundError:
-        return None
-
-    finally:
+        
         if drop_culomns is not None:
             census_df = census_df.drop(census_df.columns[drop_culomns], axis=1)
 
@@ -176,6 +172,9 @@ def load_census_data(code, base_dir=".", partition="oa", drop_culomns=None, colu
             census_df.columns = column_names
 
         return census_df
+
+    except FileNotFoundError:
+        return None
     
 
 def load_census_data_smallest_partition(code, base_dir=".", drop_culomns=None, column_names=None, partitions = ["oa", "lsoa", "msoa", "ltla", "utla", "rgn", "ctry"]):
