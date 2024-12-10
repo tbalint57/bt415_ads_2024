@@ -441,36 +441,6 @@ def filter_osm_data_based_on_tags(input_file="uk.osm.pbf", output_file="uk_filte
     print("Filtering complete. Output written to 'uk_super_filtered.osm.pbf'.")
 
 
-def index_osm_data_on_location(input_file="uk_filtered.osm.pbf", nodes_file="nodes.pkl", index_file="rtree_index"):
-    """
-    Index the osm data on its coordinates: input_file -> nodes_file, rtree_index.
-    """
-    class NodeHandler(osmium.SimpleHandler):
-        def __init__(self):
-            super().__init__()
-            self.nodes = [] 
-
-        def node(self, n):
-            self.nodes.append((n.location.lat, n.location.lon, dict(n.tags)))
-
-    print("Parsing OSM file...")
-    handler = NodeHandler()
-    handler.apply_file(input_file)
-    nodes = handler.nodes
-
-    print(f"Saving {len(nodes)} nodes to {nodes_file}...")
-    with open(nodes_file, 'wb') as f:
-        pickle.dump(nodes, f)
-
-    print("Building R-tree index...")
-    idx = index.Index(index_file)
-    for i, (lat, lon, tags) in enumerate(nodes):
-        idx.insert(i, (lon, lat, lon, lat))
-
-    print(f"Index saved to {index_file}.")
-    return nodes, idx
-
-
 def query_osm_batch(latitudes, longitudes, nodes_file="nodes.pkl", index_file="retree_index", tags=None, distance_km=1.0):
     """
     Query the OSM data in batch.
