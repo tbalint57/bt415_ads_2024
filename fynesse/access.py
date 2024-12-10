@@ -197,7 +197,8 @@ def clear_ONS_data_hierarchy(source_file="Output_Area_to_Lower_layer_Super_Outpu
     hierarchy_df.to_csv(destination_file, index=False)
 
 
-def upload_ONS_data(conn, base_dir="", 
+def upload_ONS_data(conn, 
+                    base_dir="", 
                     source_file_names = ["Output_Areas_2021_PWC_V3_1988140134396269925.csv", "Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv"],
                     destination_file_names=["oa_crds.csv", "oa_hierarchy_mapping.csv"], 
                     table_names=["oa_cords", "oa_hierarchy_mapping"], 
@@ -222,18 +223,34 @@ def upload_ONS_data(conn, base_dir="",
 # Cesnus
 
 
-def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, column_names=None, no_oa_data=None, oa_cords_table_name="oa_cords", oa_hierarchy_table_name="oa_hierarchy_mapping"):
+def upload_census_data(conn, 
+                    base_dir="census_data", 
+                    columns_to_drop=None, 
+                    column_names=None, 
+                    no_oa_data=None, 
+                    oa_cords_table_name="oa_cords", 
+                    oa_hierarchy_table_name="oa_hierarchy_mapping"):
+
     if columns_to_drop is None:
         columns_to_drop = {
         "TS001": [0, 1, 3],
         "TS002": [0, 1, 3, 5, 6, 9, 13, 14, 16, 17, 19, 20],
         "TS003": [0, 1, 3, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24],
+        "TS004": [0, 1, 3, 4, 7, 8, 9, 10, 12],
         "TS007": [0, 1, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115],
         "TS011": [0, 1, 3],
+        "TS016": [0, 1, 3],
         "TS017": [0, 1, 3],
+        "TS018": [0, 1, 3, 5],
+        "TS019": [0, 1, 3, 5],
+        "TS021": [0, 1, 3, 5, 6, 7, 8, 9, 11, 12, 13, 15, 16, 17, 18, 20, 21, 22, 23, 24, 26, 27],
+        "TS025": [0, 1, 3],
+        "TS029": [0, 1, 3, 6, 7, 8, 9],
+        "TS030": [0, 1, 3],
         "TS037": [0, 1, 3],
         "TS038": [0, 1, 3, 4, 7],
         "TS039": [0, 1, 3, 6, 7, 9, 10],
+        "TS040": [0, 1, 3],
         "TS058": [0, 1, 3],
         "TS059": [0, 1, 3, 4, 7],
         "TS060": [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43, 44, 45, 47, 49, 50, 51, 52, 54, 55, 56, 57, 58, 60, 61, 63, 64, 65, 66, 67, 68, 70, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 91, 93, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
@@ -244,6 +261,7 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
         "TS066": [0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32],
         "TS067": [0, 1, 3],
         "TS068": [0, 1, 3],
+        "TS070": [0, 1, 3],
     }
 
     if column_names is None:
@@ -251,12 +269,21 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
         "TS001": ["id", "household", "communal"],
         "TS002": ["id", "never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
         "TS003": ["id", "one_person", "single_family", "other"],
+        "TS004": ["id", "UK", "EU", "Europe_non_EU", "Africa", "Asia", "Americas", "Australia_Oceania_Antarctica", "British_Overseas"],
         "TS007": ["id", "4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
         "TS011": ["id", "0", "1", "2", "3", "4"],
+        "TS016": ["id", "born_in_UK", "10_plus", "5_to_10", "2_to_5", "5_minus"],
         "TS017": ["id", "0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
+        "TS018": ["id", "born_in_UK", "4_minus", "5_to_7", "8_to_9", "10_to_14", "15", "16_to_17", "18_to_19", "20_to_24", "25_to_29", "30_to_44", "45_to_59", "60_to_64", "65_to_74", "75_to_84", "85_to_89", "90_plus"],
+        "TS019": ["id", "enumeration_address", "student_address", "UK_address", "non_UK_address"],
+        "TS021": ["id", "asian", "black", "mixed", "white", "other"],
+        "TS025": ["id", "all_english_or_welsh", "some_adult_english_or_welsh", "some_child_english_or_welsh", "no_english_or_welsh"],
+        "TS029": ["id", "main_language_english", "main_language_not_english"],
         "TS037": ["id", "very_good", "good", "fair", "bad", "very_bad"],
+        "TS030": ["id", "no_religion", "christian", "buddhist", "hindu", "jewish", "muslim", "sikh", "other", "not_answered"],
         "TS038": ["id", "limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
         "TS039": ["id", "none", "19_minus", "20_to_49", "50_plus"],
+        "TS040": ["id", "none", "1", "2_plus"],
         "TS058": ["id", "2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
         "TS059": ["id", "15_minus", "16_to_30", "31_to_48", "49_plus"],
         "TS060": ["id", "A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
@@ -266,7 +293,9 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
         "TS065": ["id", "employed", "unemployed", "never_been_employed"],
         "TS066": ["id", "active_non_student", "active_student", "inactive", "other"],
         "TS067": ["id", "none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
-        "TS068": ["id", "student", "not_student"]
+        "TS068": ["id", "student", "not_student"],
+        "TS070": ["id", "same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "non_binary", "other", "no_answer"],
+        "TS077": ["id", "heterosexual", "homosexual", "bisexual", "other", "no_answer"],
     }
 
     if no_oa_data is None:
@@ -306,7 +335,8 @@ def upload_census_data(conn, base_dir="census_data", columns_to_drop=None, colum
 
 #OSM
 
-def process_OSM_data(osm_file="uk.osm.pbf", output_dir="osm_data"):
+def process_OSM_data(osm_file="uk.osm.pbf", 
+                    output_dir="osm_data"):
     class NodeFilterHandlerFilter(osmium.SimpleHandler):
         def __init__(self):
             super(NodeFilterHandlerFilter, self).__init__()
@@ -386,8 +416,6 @@ def process_OSM_data(osm_file="uk.osm.pbf", output_dir="osm_data"):
         print("All grids processed and saved.")
 
     osm_file = "uk_filtered.osm.pbf"
-
-    print("started working")
 
     if not os.path.exists(output_dir):
         print("Building and saving grid-based indexes...")
