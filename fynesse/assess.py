@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from .utils import aws_utils, pandas_utils, plot_utils
+
 
 from . import access
 
@@ -121,6 +123,7 @@ def normalise_data_frame(df):
     normalised_df[numerical_df.columns] = normalised_features
 
     return normalised_df
+
 
 def get_sales_in_region(conn, latitude, longitude, from_year, distance_km = 1):
     from_date = str(from_year) + "-01-01"
@@ -243,3 +246,9 @@ def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["O
     plt.ylabel(goal_col)
     plt.grid(True)
     plt.show()
+
+
+def visualise_transport_data(conn):
+    field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    transport_df = pandas_utils.normalise_data_frame(aws_utils.query_AWS_load_table(conn, "census_data", field_names))
+    plot_utils.visualise_output_values(transport_df.to_numpy(), field_names)
