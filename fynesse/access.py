@@ -161,12 +161,12 @@ def load_csv(file_name, columns=None, column_names=None, index=None):
     return df
 
 
-def load_census_data(code, base_dir=".", drop_culomns=None, column_names=None):
+def load_census_data(code, base_dir=".", partition="oa", drop_culomns=None, column_names=None):
     try:
-        census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-oa.csv')
+        census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-{partition}.csv')
 
     except FileNotFoundError:
-        census_df = load_csv(f'{base_dir}/census2021-{code.lower()}/census2021-{code.lower()}-msoa.csv')
+        return None
 
     finally:
         if drop_culomns is not None:
@@ -176,6 +176,17 @@ def load_census_data(code, base_dir=".", drop_culomns=None, column_names=None):
             census_df.columns = column_names
 
         return census_df
+    
+
+def load_census_data_smallest_partition(code, base_dir=".", drop_culomns=None, column_names=None, partitions = ["oa", "lsoa", "msoa", "ltla", "utla", "rgn", "ctry"]):
+    census_df = None
+
+    for partition in partitions:
+        census_df = load_census_data(code, base_dir=base_dir, partition=partition, drop_culomns=drop_culomns, column_names=column_names)
+        if census_df is not None:
+            return partition.upper(), census_df
+        
+    return None, None
 
 
 # ONS
@@ -227,7 +238,6 @@ def upload_census_data(conn,
                     base_dir="census_data", 
                     columns_to_drop=None, 
                     column_names=None, 
-                    no_oa_data=None, 
                     oa_cords_table_name="oa_cords", 
                     oa_hierarchy_table_name="oa_hierarchy_mapping"):
 
@@ -298,9 +308,6 @@ def upload_census_data(conn,
         "TS077": ["id", "heterosexual", "homosexual", "bisexual", "other", "no_answer"],
     }
 
-    if no_oa_data is None:
-        no_oa_data = ["TS007", "TS060"]
-
     codes = column_names.keys()
 
     for code in codes:
@@ -314,11 +321,11 @@ def upload_census_data(conn,
         print(f"Downloading census data for code {code}")
         download_census_data(code, base_dir=base_dir)
         print(f"Cleaning up census data for code {code}")
-        census_df = load_census_data(code, base_dir, columns_to_drop[code], column_names[code])
+        partition, census_df = load_census_data_smallest_partition(code, base_dir, "oa", columns_to_drop[code], column_names[code])
 
-        if code in no_oa_data:
-            census_df.rename(columns={census_df.columns[0]: "MSOA"}, inplace=True)
-            census_df = pd.merge(oa_hierarchy[["OA", "MSOA"]], census_df, on=["MSOA"], how="inner").drop(["MSOA"], axis=1)
+        if partition != "OA":
+            census_df.rename(columns={census_df.columns[0]: partition}, inplace=True)
+            census_df = pd.merge(oa_hierarchy[["OA", partition]], census_df, on=[partition], how="inner").drop([partition], axis=1)
 
         census_df.rename(columns={census_df.columns[0]: "OA"}, inplace=True)
         
