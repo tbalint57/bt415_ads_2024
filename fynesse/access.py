@@ -318,7 +318,7 @@ def upload_census_data(conn,
     oa_hierarchy = aws_utils.query_AWS_load_table(conn, oa_hierarchy_table_name)
 
     for code in codes:
-        print(f"Downloading census data for code {code}")
+        print(f"\nDownloading census data for code {code}")
         download_census_data(code, base_dir=base_dir)
         print(f"Cleaning up census data for code {code}")
         partition, census_df = load_census_data_smallest_partition(code, base_dir, columns_to_drop[code], column_names[code])
@@ -332,12 +332,10 @@ def upload_census_data(conn,
         print(f"Merging census data for code {code}")
         joined_df = pd.merge(joined_df, census_df, on=["OA"], how="inner")
     
-    print(f"Uploading census data")
+    print(f"\nUploading census data")
     joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
-    print(joined_types)
-    print(joined_df.columns)
     aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
-    print("Census Data Successfully Uploaded!")
+    print("\nCensus Data Successfully Uploaded!")
 
 
 #OSM
