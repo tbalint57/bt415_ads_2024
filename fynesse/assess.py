@@ -234,6 +234,7 @@ def visualise__transport_and_age(conn):
     age_df = response_df[["OA"] + age_field_names]
     transpost_df = response_df[["OA"] + transport_field_names]
 
+    plt.figure(figsize=(9, 18))
     plot_utils.visualise_relationship_by_components(age_df, transpost_df)
 
 
