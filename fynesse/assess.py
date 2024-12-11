@@ -226,7 +226,7 @@ def visualise_transport_data_outliers(conn, number_of_outiers=500):
     plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
 
 
-def visualise__transport_and_age(conn):
+def visualise_transport_and_age(conn):
     age_field_names = ["TS007_4_minus", "TS007_5_to_9", "TS007_10_to_15", "TS007_16_to_19", "TS007_20_to_24", "TS007_25_to_34", "TS007_35_to_49", "TS007_50_to_64", "TS007_65_to_74", "TS007_75_to_84", "TS007_85_plus"]
     transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     response_df = aws_utils.query_AWS_load_table(conn, "census_data", ["OA"] + transport_field_names + age_field_names)
@@ -236,6 +236,15 @@ def visualise__transport_and_age(conn):
 
     plt.figure(figsize=(9, 33))
     plot_utils.visualise_relationship_by_components(age_df, transpost_df)
+
+
+def visualise_car_usage_on_map(conn):
+    transport_field_names = ["latitude", "longtude", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    response_df = aws_utils.query_AWS_load_table(conn, "census_data", transport_field_names)
+    car_df = pandas_utils.normalise_data_frame(response_df[["OA"] + transport_field_names], ["latitude", "longtude"])[["latitude", "longtude", "TS061_car_driving"]]
+
+    plt.figure(figsize=(12, 12))
+    plot_utils.visualise_feature_on_map(car_df, "drivers")
 
 
 

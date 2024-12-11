@@ -76,10 +76,10 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
         plt.ylabel("Goal values")
         plt.title("Relationship between " + feature_col + " and the goal")
 
-        plt.legend()
-
         num_plotted += 1
 
+
+    plt.legend()
     plt.tight_layout()
     plt.show()
 
@@ -95,3 +95,20 @@ def visualise_relationship(df, column_a, column_b):
     plt.xlabel(column_a)
     plt.ylabel(column_b)
     plt.title("Relationship between " + column_a + " and " + column_b)
+
+
+
+def visualise_feature_on_map(df, feature_name):
+    scatter = plt.scatter(
+        df['long'], df['lat'], 
+        c=df['value'], cmap='viridis', s=5, alpha=0.5
+    )
+    
+    cbar = plt.colorbar(scatter, orientation="vertical")
+    cbar.set_label("Value")
+    
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title(f"Visualization of {feature_name} on Map")
+    
+    plt.show()
