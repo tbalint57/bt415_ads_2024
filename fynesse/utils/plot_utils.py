@@ -25,12 +25,27 @@ def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylab
         plt.ylabel(ylabel)
 
     plt.grid(True)
-    plt.show()
 
 
-def visualise_output_values(feature_arrays, feature_labels=None, title=None):
-    print(len(feature_arrays), len(feature_labels))
+def visualise_feature_values_increasing(features_df, feature_labels=None, title=None):
+    if not feature_labels:
+        feature_labels = features_df.columns
 
-    sorted_arrays = [np.sort(np.copy(feature_array)) for feature_array in feature_arrays]
+    sorted_feature_arrays = [np.sort(feature_array) for feature_array in np.transpose(features_df.to_numpy())]
 
-    plot_arrays(sorted_arrays, labels=feature_labels, title=title, xlabel="n-th lowest value", ylabel="value")
+    plot_arrays(sorted_feature_arrays, labels=feature_labels, title=title, xlabel="n-th lowest value", ylabel="value")
+
+
+def visualise_feature_outliers(features_df, num_outliers=500, feature_labels=None, title=None):
+    if not feature_labels:
+        feature_labels = features_df.columns
+
+    sorted_feature_arrays = [np.sort(feature_array) for feature_array in np.transpose(features_df.to_numpy())]
+
+    sorted_feature_arrays_mins = [feature_array[:num_outliers] for feature_array in np.transpose(features_df.to_numpy())]
+    sorted_feature_arrays_maxs = [feature_array[-num_outliers:] for feature_array in np.transpose(features_df.to_numpy())]
+
+    plt.subplot(1, 2, 1)
+    plot_arrays(sorted_feature_arrays_mins, labels=feature_labels, title=title, xlabel="n-th lowest value", ylabel="value")
+    plt.subplot(1, 2, 2)
+    plot_arrays(sorted_feature_arrays_maxs, labels=feature_labels, title=title, xlabel="n-th highest value", ylabel="value")
