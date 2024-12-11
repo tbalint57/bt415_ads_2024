@@ -160,42 +160,6 @@ def get_building_addresses_in_region(latitude, longitude, distance_km=1):
     return addresses
 
 
-def visualise_relationship(df, column_a, column_b):
-    plt.figure(figsize=(8, 6))  # Set the figure size
-    plt.scatter(df[column_a], df[column_b], color="green", alpha=0.7)
-
-
-    a, b = np.polyfit(df[column_a], df[column_b], 1)
-    plt.plot(df[column_a], a*df[column_a]+b)
-
-    # Add labels and title
-    plt.xlabel(column_a)
-    plt.ylabel(column_b)
-    plt.title("Relationship between " + column_a + " and " + column_b)
-
-    plt.show()
-
-
-def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
-    df = pd.merge(feature_df, goal_df, on=merge_on)
-
-    for feature_col in feature_df.columns:
-        if feature_col == "OA":
-            continue
-
-        for goal_col in goal_df.columns:
-            if goal_col == "OA":
-                continue
-                
-            a, b = np.polyfit(df[feature_col], df[goal_col], 1)
-            plt.plot(df[feature_col], a*df[feature_col]+b, label=goal_col)
-
-        plt.xlabel(feature_col)
-        plt.ylabel("Goal values")
-        plt.title("Relationship between " + feature_col + " and the goal")
-
-        plt.legend() 
-        plt.show()
 
 
 def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
@@ -256,8 +220,22 @@ def visualise_transport_data(conn):
 
 
 def visualise_transport_data_outliers(conn, number_of_outiers=500):
-    field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-    transport_df = pandas_utils.normalise_data_frame(aws_utils.query_AWS_load_table(conn, "census_data", field_names))
+    transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    transport_df = pandas_utils.normalise_data_frame(aws_utils.query_AWS_load_table(conn, "census_data", transport_field_names))
     plt.figure(figsize=(18, 6))
     plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
+
+
+def visualise__transport_and_age(conn):
+    age_field_names = ["TS007_4_minus", "TS007_5_to_9", "TS007_10_to_15", "TS007_16_to_19", "TS007_20_to_24", "TS007_25_to_34", "TS007_35_to_49", "TS007_50_to_64", "TS007_65_to_74", "TS007_75_to_84", "TS007_85_plus"]
+    transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    response_df = aws_utils.query_AWS_load_table(conn, "census_data", ["OA"] + transport_field_names + age_field_names)
+
+    age_df = response_df[["OA"] + age_field_names]
+    transpost_df = response_df[["OA"] + transport_field_names]
+
+    plot_utils.visualise_relationship_by_components(age_df, transpost_df)
+
+
+
     
