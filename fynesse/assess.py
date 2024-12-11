@@ -231,10 +231,10 @@ def visualise__transport_and_age(conn):
     transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     response_df = aws_utils.query_AWS_load_table(conn, "census_data", ["OA"] + transport_field_names + age_field_names)
 
-    age_df = response_df[["OA"] + age_field_names]
-    transpost_df = response_df[["OA"] + transport_field_names]
+    age_df = pandas_utils.normalise_data_frame(response_df[["OA"] + age_field_names], ["OA"])
+    transpost_df = pandas_utils.normalise_data_frame(response_df[["OA"] + transport_field_names], ["OA"])
 
-    plt.figure(figsize=(9, 18))
+    plt.figure(figsize=(9, 33))
     plot_utils.visualise_relationship_by_components(age_df, transpost_df)
 
 
