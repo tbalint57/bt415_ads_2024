@@ -251,11 +251,13 @@ def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["O
 def visualise_transport_data(conn):
     field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     transport_df = pandas_utils.normalise_data_frame(aws_utils.query_AWS_load_table(conn, "census_data", field_names))
+    plt.figure(figsize=(18, 6))
     plot_utils.visualise_feature_values_increasing(transport_df)
 
 
 def visualise_transport_data_outliers(conn, number_of_outiers=500):
     field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     transport_df = pandas_utils.normalise_data_frame(aws_utils.query_AWS_load_table(conn, "census_data", field_names))
+    plt.figure(figsize=(18, 6))
     plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
     
