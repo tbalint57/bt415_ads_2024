@@ -59,6 +59,7 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
     num_plotted = 1
 
     for feature_col in feature_df.columns:
+        plt.subplot(num_of_plots, 1, num_plotted)
 
         if feature_col == "OA":
             continue
@@ -70,7 +71,6 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
             a, b = np.polyfit(df[feature_col], df[goal_col], 1)
             plt.plot(df[feature_col], a*df[feature_col]+b, label=goal_col)
 
-        plt.subplot(num_of_plots, 1, num_plotted)
 
         plt.xlabel(feature_col)
         plt.ylabel("Goal values")
@@ -79,7 +79,7 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
         plt.legend()
 
         num_plotted += 1
-        
+
     plt.tight_layout()
     plt.show()
 
