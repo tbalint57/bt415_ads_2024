@@ -79,7 +79,8 @@ def visualise_relationship_by_components(feature_df, goal_df, merge_on=["OA"]):
         plt.legend()
 
         num_plotted += 1
-    
+        
+    plt.tight_layout()
     plt.show()
 
 
