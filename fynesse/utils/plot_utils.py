@@ -7,8 +7,8 @@ def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylab
     for i, array in enumerate(arrays):
         x = np.arange(len(array))
         
-        label = labels[i] if labels else None
-        color = colours[i] if colours else None
+        label = labels[i] if labels is not None else None
+        color = colours[i] if colours is not None else None
 
         plt.plot(x, array, label=label, color=color)
 
