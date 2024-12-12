@@ -197,7 +197,7 @@ def clear_ONS_data_cords(source_file="Output_Areas_2021_PWC_V3_19881401343962699
 
     transformer = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
     cords_df["long"], cords_df["lat"] = transformer.transform(cords_df["x"].values, cords_df["y"].values)
-    cords_df = cords_df[["OA", "long", "lat"]]
+    cords_df = cords_df.rename(columns={"OA21CD": "OA"})[["OA", "long", "lat"]]
     cords_df.to_csv(destination_file, index=False)
 
 
