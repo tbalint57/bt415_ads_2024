@@ -209,7 +209,7 @@ def clear_ONS_data_hierarchy(source_file="Output_Area_to_Lower_layer_Super_Outpu
 
 
 def upload_ONS_data(conn, 
-                    base_dir="", 
+                    base_dir=".", 
                     source_file_names = ["Output_Areas_2021_PWC_V3_1988140134396269925.csv", "Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv"],
                     destination_file_names=["oa_crds.csv", "oa_hierarchy_mapping.csv"], 
                     table_names=["oa_cords", "oa_hierarchy_mapping"], 

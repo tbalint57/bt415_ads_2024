@@ -59,6 +59,21 @@ def upload_data_from_file(conn, file, table_name, type, key):
     print(f"Uploaded `{file}` to table `{table_name}` successfully!")
 
 
+def delete_invalid_values(conn, table_name, invalid_values):
+    cursor = conn.cursor()
+    conditions = []
+    for column, values in invalid_values.items():
+        formatted_values = ', '.join([f"'{v}'" if isinstance(v, str) else str(v) for v in values])
+        conditions.append(f"`{column}` IN ({formatted_values})")
+    
+    where_clause = ' OR '.join(conditions)
+    delete_query = f"DELETE FROM `{table_name}` WHERE {where_clause};"
+    
+    cursor.execute(delete_query)
+    conn.commit()
+    print(f"Deleted invalid rows from `{table_name}` where: {where_clause}.")
+
+
 def query_AWS_load_table(conn, table_name, columns=None):
     if columns is None:
         query_str = f"SELECT * FROM {table_name};"
