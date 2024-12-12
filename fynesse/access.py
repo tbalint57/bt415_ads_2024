@@ -342,6 +342,7 @@ def upload_census_data(conn,
     print(f"\nUploading census data")
     joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
     aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
+    aws_utils.delete_invalid_values(conn, "census_data", {"OA": ["OA"]}) # Brute force fix
     print("\nCensus Data Successfully Uploaded!")
 
 
