@@ -239,7 +239,7 @@ def visualise_transport_and_age(conn):
 
 
 def visualise_car_usage_on_map(conn):
-    transport_field_names = ["latitude", "longtude", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    transport_field_names = ["long", "lat", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     response_df = aws_utils.query_AWS_load_table(conn, "census_data", transport_field_names)
     car_df = pandas_utils.normalise_data_frame(response_df[["OA"] + transport_field_names], ["latitude", "longtude"])[["latitude", "longtude", "TS061_car_driving"]]
 
