@@ -5,15 +5,13 @@ import csv
 import osmnx as ox
 import warnings
 import pandas as pd
+import numpy as np
 import zipfile
-import pickle
 import io
-from rtree import index
 from shapely.geometry import box
-from .utils import aws_utils, pandas_utils
+from .utils import aws_utils, pandas_utils, osm_utils
 from pyproj import Transformer
-import osmium
-import math
+from scipy.spatial import cKDTree
 warnings.filterwarnings("ignore", category=FutureWarning, module='osmnx')
 
 """These are the types of import we might expect in this file
@@ -196,8 +194,8 @@ def clear_ONS_data_cords(source_file="Output_Areas_2021_PWC_V3_19881401343962699
     cords_df = pandas_utils.load_csv(source_file, ["OA21CD", "x", "y"])
 
     transformer = Transformer.from_crs("EPSG:27700", "EPSG:4326", always_xy=True)
-    cords_df["long"], cords_df["lat"] = transformer.transform(cords_df["x"].values, cords_df["y"].values)
-    cords_df = cords_df.rename(columns={"OA21CD": "OA"})[["OA", "long", "lat"]]
+    cords_df["lat"], cords_df["long"] = transformer.transform(cords_df["x"].values, cords_df["y"].values)
+    cords_df = cords_df.rename(columns={"OA21CD": "OA"})[["OA", "lat", "long"]]
     cords_df.to_csv(destination_file, index=False)
 
 
@@ -211,12 +209,13 @@ def clear_ONS_data_hierarchy(source_file="Output_Area_to_Lower_layer_Super_Outpu
                                         "LAD22CD": "LAD", 
                                         "LAD22NM": "LAD_name"})
     
+    print(hierarchy_df.columns)
     hierarchy_df.to_csv(destination_file, index=False)
 
 
 def upload_ONS_data(conn, 
                     base_dir=".", 
-                    source_file_names = ["Output_Areas_2021_PWC_V3_1988140134396269925.csv", "Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv"],
+                    source_file_names=["Output_Areas_2021_PWC_V3_1988140134396269925.csv", "Output_Area_to_Lower_layer_Super_Output_Area_to_Middle_layer_Super_Output_Area_to_Local_Authority_District_(December_2021)_Lookup_in_England_and_Wales_v3.csv"],
                     destination_file_names=["oa_crds.csv", "oa_hierarchy_mapping.csv"], 
                     table_names=["oa_cords", "oa_hierarchy_mapping"], 
                     types=[["varchar(16)", "float(32)", "float(32)"], ["varchar(16)", "varchar(16)", "varchar(50)", "varchar(16)", "varchar(50)", "varchar(16)", "varchar(50)"]], 
@@ -270,7 +269,7 @@ def upload_census_data(conn,
         "TS058": [0, 1, 3],
         "TS059": [0, 1, 3, 4, 7],
         "TS060": [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43, 44, 45, 47, 49, 50, 51, 52, 54, 55, 56, 57, 58, 60, 61, 63, 64, 65, 66, 67, 68, 70, 71, 72, 74, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 91, 93, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
-        "TS061": [0, 1, 3, 4],
+        "TS061": [0, 1, 3],
         "TS062": [0, 1, 3],
         "TS063": [0, 1, 3],
         "TS065": [0, 1, 3],
@@ -304,7 +303,7 @@ def upload_census_data(conn,
         "TS058": ["id", "2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
         "TS059": ["id", "15_minus", "16_to_30", "31_to_48", "49_plus"],
         "TS060": ["id", "A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
-        "TS061": ["id", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
+        "TS061": ["id", "working_from_home", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
         "TS062": ["id", "L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
         "TS063": ["id", "manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
         "TS065": ["id", "employed", "unemployed", "never_been_employed"],
@@ -321,7 +320,11 @@ def upload_census_data(conn,
         column_names[code] = [code + "_" + column_name for column_name in column_names[code]]
 
     joined_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
+    normalised_joined_df = joined_df.copy()
+
     joined_types = ["varchar(16)", "float(32)", "float(32)"]
+    normalised_joined_types = ["varchar(16)", "float(32)", "float(32)"]
+
     oa_hierarchy = aws_utils.query_AWS_load_table(conn, oa_hierarchy_table_name)
 
     for code in codes:
@@ -339,219 +342,187 @@ def upload_census_data(conn,
         print(f"Merging census data for code {code}")
         joined_df = pd.merge(joined_df, census_df, on=["OA"], how="inner")
 
+        normalised_census_df = pandas_utils.normalise_data_frame_by_rows(census_df, ["OA"])
+        normalised_joined_df = pd.merge(normalised_joined_df, normalised_census_df, on=["OA"], how="inner")
+
     print(f"\nUploading census data")
     joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
+    normalised_joined_types += ["float(32)" for _ in range(len(joined_df.columns) - 3)]
+
     aws_utils.upload_data_from_df(conn, joined_df, "census_data", joined_types, "OA")
-    aws_utils.delete_invalid_values(conn, "census_data", {"OA": ["OA"]}) # Brute force fix
+    aws_utils.upload_data_from_df(conn, normalised_joined_df, "normalised_census_data", normalised_joined_types, "OA")
+    
     print("\nCensus Data Successfully Uploaded!")
+
+
+def calculate_close_points(lats, longs, distance_km=0.2):
+    distance_cords = distance_km / 111
+
+    points_2d = np.column_stack((lats, longs))
+
+    tree = cKDTree(points_2d)
+
+    neighbors_count = tree.query_ball_point(points_2d, r=distance_cords, return_length=True)
+
+    return neighbors_count
 
 
 #OSM
 
-def process_OSM_data(osm_file="uk.osm.pbf", 
-                    output_dir="osm_data"):
-    class NodeFilterHandlerFilter(osmium.SimpleHandler):
-        def __init__(self):
-            super(NodeFilterHandlerFilter, self).__init__()
-            self.writer = osmium.SimpleWriter("uk_filtered.osm.pbf")
 
-        def node(self, n):
-            # Check if the node has two or more tags
-            if len(n.tags) >= 2:
-                self.writer.add_node(n)
+def upload_OSM_data(conn, source_file="uk.osm.pbf"):
+    filtered_osm_file = "uk_nodes_with_tags.osm.pbf"
+    osm_utils.filter_by_number_of_tags(source_file, filtered_osm_file)
 
-        def close(self):
-            self.writer.close()
+    public_transport_stops_tags = [
+        ("highway", "bus_stop"),
+        ("railway", "station"),
+        ("railway", "tram_stop")
+    ]
 
-    print("Filtering...")
+    amenity_non_transport_tags=[
+        ("amenity", "post_box"),
+        ("amenity", "fast_food"),
+        ("amenity", "cafe"),
+        ("amenity", "restaurant"),
+        ("amenity", "pub"),
+        ("amenity", "atm"),
+        ("amenity", "post_office"),
+        ("amenity", "pharmacy"),
+        ("amenity", "place_of_worship"),
+        ("amenity", "bar"),
+        ("amenity", "bank"),
+        ("amenity", "dentist"),
+        ("amenity", "social_facility"),
+        ("amenity", "doctors"),
+        ("amenity", "kindergarten"),
+        ("amenity", "parcel_locker"),
+        ("amenity", "library"),
+        ("amenity", "veterinary"),
+        ("amenity", "clinic"),
+        ("amenity", "childcare"),
+        ("amenity", "school"),
+        ("amenity", "nightclub"),
+        ("amenity", "theatre"),
+        ("amenity", "police"),
+        ("amenity", "cinema"),
+        ("amenity", "marketplace"),
+        ("amenity", "college"),
+        ("amenity", "hospital"),
+        ("amenity", "university"),
+        ("amenity", "social_club"),
+        ("amenity", "courthouse")
+    ]
+
+    amenity_transport_tags = [
+        ("amenity", "bicycle_parking"),
+        ("amenity", "parking"),
+        ("amenity", "charging_station"),
+        ("amenity", "parking_space"),
+        ("amenity", "fuel"),
+        ("amenity", "bicycle_rental"),
+        ("amenity", "motorcycle_parking"),
+        ("amenity", "taxi"),
+        ("amenity", "car_wash"),
+        ("amenity", "ferry_terminal"),
+        ("amenity", "car_rental"),
+        ("amenity", "bicycle_repair_station"),
+        ("amenity", "bus_station"),
+        ("amenity", "trolley_bay"),
+        ("amenity", "driving_school")
+    ]
+
+    public_transport_stops_file = "uk_public_transport_stops.osm.pbf"
+    amenity_non_transport_file = "uk_amenities_non_transport.osm.pbf"
+    amenity_transport_file = "uk_amenities_transport.osm.pbf"
+
+    osm_utils.filter_and_save_node(filtered_osm_file, public_transport_stops_file, public_transport_stops_tags)
+    osm_utils.filter_and_save_selected_tags_only(filtered_osm_file, amenity_non_transport_file, amenity_non_transport_tags)
+    osm_utils.filter_and_save_selected_tags_only(filtered_osm_file, amenity_transport_file, amenity_transport_tags)
+
     
-    handler = NodeFilterHandlerFilter()
-    handler.apply_file(osm_file, locations=False)
+    public_transport_stops_index_file = "uk_public_transport_stops.osm.pbf"
+    amenity_non_transport_index_file = "uk_amenities_non_transport.osm.pbf"
+    amenity_transport_index_file = "uk_amenities_transport.osm.pbf"
 
-    handler.close()
+    osm_utils.build_and_save_index(public_transport_stops_file, public_transport_stops_index_file)
+    osm_utils.build_and_save_index(amenity_non_transport_file, amenity_non_transport_index_file)
+    osm_utils.build_and_save_index(amenity_transport_file, amenity_transport_index_file)
 
-    print("Filtering complete. Output written to 'uk_filtered.osm.pbf'.")
+    oa_cords_table_name = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
 
+    oa_cords_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
+    oa_id_df = oa_cords_df[["OA"]]
 
-    class NodeHandlerIndexer(osmium.SimpleHandler):
-        def __init__(self):
-            super().__init__()
-            self.grid_nodes = {} 
+    latitudes = oa_cords_df["lat"].to_numpy()
+    longitudes = oa_cords_df["long"].to_numpy()
 
-        def get_grid_keys(self, lat, lon):
-            keys = []
-            base_lat = math.floor(lat)
-            base_lon = math.floor(lon)
+    def stops_data_extractor(nodes):
+        stops = {
+            "bus": 0,
+            "train": 0,
+            "underground": 0,
+            "tram": 0 
+        }
 
-            for lat_offset in [0, -1, 1]:
-                for lon_offset in [0, -1, 1]:
-                    grid_lat = base_lat + lat_offset
-                    grid_lon = base_lon + lon_offset
+        bus_stop_count_by_type = {
+            "shelter": 0,
+            "covered": 0,
+            "lit": 0,
+            "bench": 0,
+            "wheelchair": 0,
+            "passenger_information_display": 0
+        }
 
-                    # Only include grids that overlap within the extended range (0.05 buffer)
-                    if grid_lat - 0.05 <= lat <= grid_lat + 1.05 and grid_lon - 0.05 <= lon <= grid_lon + 1.05:
-                        keys.append((grid_lat, grid_lon))
+        for node in nodes:
+            node_tags = node[2]
 
-            return keys
-
-        def node(self, n):
-            grid_keys = self.get_grid_keys(n.location.lat, n.location.lon)
-            for key in grid_keys:
-                if key not in self.grid_nodes:
-                    self.grid_nodes[key] = []
-                self.grid_nodes[key].append((n.location.lat, n.location.lon, dict(n.tags)))
-
-
-    def build_and_save_index(osm_file, output_dir):
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        print("Parsing OSM file...")
-        handler = NodeHandlerIndexer()
-        handler.apply_file(osm_file)
-
-        for (lat_min, lon_min), nodes in handler.grid_nodes.items():
-            grid_key = f"{lat_min}_{lon_min}"
-            nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
-            index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
-
-            print(f"Saving {len(nodes)} nodes for grid {grid_key}...")
-
-            with open(nodes_file, 'wb') as f:
-                pickle.dump(nodes, f)
-
-            print(f"Building R-tree index for grid {grid_key}...")
-            idx = index.Index(index_file)
-            for i, (lat, lon, tags) in enumerate(nodes):
-                idx.insert(i, (lon, lat, lon, lat))
-            print(f"Index for grid {grid_key} saved.")
-
-        print("All grids processed and saved.")
-
-    osm_file = "uk_filtered.osm.pbf"
-
-    if not os.path.exists(output_dir):
-        print("Building and saving grid-based indexes...")
-        build_and_save_index(osm_file, output_dir)
-    else:
-        print("Grid-based indexes already exist.")
-
-    print(f"OSM data processed in {output_dir}")
+            if node_tags.get("highway") == "bus_stop":
+                stops["bus"] += 1
+                for type in bus_stop_count_by_type:
+                    if node_tags.get(type) == "yes":
+                        bus_stop_count_by_type[type] += 1
+            
+            if node_tags.get("railway") == "station":
+                if node_tags.get("station") == "subway":
+                    stops["underground"] += 1
+        
+                elif node_tags.get("station") == "subway":
+                    stops["underground"] += 1
+                
+                else:
+                    stops["train"] += 1
 
 
-def load_index_and_nodes(output_dir, lat_min, lon_min):
-    """
-    Load nodes and R-tree index for a specific grid square.
-    """
-    grid_key = f"{lat_min}_{lon_min}"
-    nodes_file = os.path.join(output_dir, f"nodes_{grid_key}.pkl")
-    index_file = os.path.join(output_dir, f"rtree_index_{grid_key}")
-
-    print(f"Loading nodes for grid {grid_key} from {nodes_file}...")
-    with open(nodes_file, 'rb') as f:
-        nodes = pickle.load(f)
-
-    print(f"Loading R-tree index for grid {grid_key} from {index_file}...")
-    idx = index.Index(index_file)
-    return nodes, idx
+        return stops, bus_stop_count_by_type
 
 
-def query_OSM_batch(osm_dir, points, distance_km):
-    """
-    Batch query OSM nodes for multiple points in the same grid.
-    """
-    lat0, lon0 = points[0]
-    lat0, lon0 = math.floor(lat0), math.floor(lon0)
+    def amenity_data_extractor(nodes):
+        count = {}
 
-    nodes, idx = load_index_and_nodes(osm_dir, lat0, lon0)
-    distance_cords = distance_km / 111
-    distance_cords /= 2
+        for node in nodes:
+            node_tags = node[2]
+            for tag_key, tag_value in node_tags.items():
+                # We can do this as by assumption tag_key=amenity
+                if tag_value not in count:
+                    count[tag_value] = 0
 
-    results = {}
-    for lat, lon in points:
-        bbox = (lon - distance_cords, lat - distance_cords, lon + distance_cords, lat + distance_cords)
-        results[(lat, lon)] = [nodes[i] for i in idx.intersection(bbox)]
+                count[tag_value] += 1
 
-    return results
+        return count
 
-# Project, Task 2
+    nearby_public_transport_stops = osm_utils.query_osm_in_batch(latitudes, longitudes, public_transport_stops_index_file, process_func=stops_data_extractor)
+    stops_dicts = [transport_stops_record[0] for transport_stops_record in nearby_public_transport_stops]
+    bus_stops_dicts = [transport_stops_record[1] for transport_stops_record in nearby_public_transport_stops]
+    nearby_public_transport_stops_df = pd.concat([oa_id_df, pd.DataFrame(stops_dicts), pd.DataFrame(bus_stops_dicts)], axis=1)
+    aws_utils.upload_data_from_df(conn, nearby_public_transport_stops_df ,"nearby_stops", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_public_transport_stops_df.columns) - 1)], "OA")
 
+    nearby_amenity_non_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_non_transport_index_file, process_func=amenity_data_extractor)
+    nearby_amenity_non_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_non_transport.tolist()).fillna(0).astype(int)], axis=1)
+    aws_utils.upload_data_from_df(conn, nearby_amenity_non_transport_df ,"nearby_amenity_non_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_non_transport_df.columns) - 1)], "OA")
 
-# def add_key_to_table(conn, table_name, key):
-#     cursor = conn.cursor()
-    
-#     sql_commands = f"""
-#     ALTER TABLE `{table_name}`
-#     ADD PRIMARY KEY (`{key}`);
-#     """
-    
-#     for command in sql_commands.strip().split(';'):
-#         if command.strip():
-#             cursor.execute(command)
-    
-#     conn.commit()
-#     print(f"Table `{table_name}` now has primary key `{key}`.")
-#     cursor.close()
+    nearby_amenity_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_transport_index_file, process_func=amenity_data_extractor)
+    nearby_amenity_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_transport.tolist()).fillna(0).astype(int)], axis=1)
+    aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 1)], "OA")
 
 
-# def upload_csv_to_table(conn, table_name, file_name):
-#     cur = conn.cursor()
-#     cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
-#     conn.commit()
-
-
-# def upload_census_data_from_df(conn, code, census_df, key = None, types=None):
-#     table_name = "census_2021_" + code
-#     if types is None:
-#         types = ["float(32) NOT NULL" for _ in census_df.columns]
-#         types[0] = "varchar(10) NOT NULL"
-
-#     columns = "".join([f"`{field}` {t},\n" for field, t in zip(census_df.columns, types)])[:-2]
-
-#     if key is None:
-#         key = code + "_id"
-
-#     setup_table(conn, table_name, columns)
-#     add_key_to_table(conn, table_name, key)
-
-#     census_df.to_csv("census_upload.csv", index=False)
-#     upload_csv_to_table(conn, table_name, "census_upload.csv")
-
-
-# def upload_ons_data_from_df(conn, ons_df, types=None):
-#     table_name = "census_2021_oas"
-#     if types is None:
-#         types = ["float(32) NOT NULL" for _ in ons_df.columns]
-#         types[0] = "varchar(10) NOT NULL"
-#         types[1] = "varchar(10) NOT NULL"
-
-#     columns = "".join([f"`{field}` {t},\n" for field, t in zip(ons_df.columns, types)])[:-2]
-
-#     setup_table(conn, table_name, columns)
-#     add_key_to_table(conn, table_name, "OA")
-
-#     ons_df.to_csv("ons_upload.csv", index=False)
-#     upload_csv_to_table(conn, table_name, "ons_upload.csv")
-
-
-# def query_AWS_load_table(conn, table_name, columns=None):
-#     if columns is None:
-#         query_str = f"SELECT * FROM {table_name};"
-#     else:
-#         cols = ", ".join(columns)
-#         query_str = f"SELECT {cols} FROM {table_name};"
-    
-#     cur = conn.cursor()
-    
-#     cur.execute(query_str)
-#     data = cur.fetchall()
-#     colnames = [desc[0] for desc in cur.description]
-    
-#     df = pd.DataFrame(data, columns=colnames)
-#     return df
-
-
-# def query_AWS_census_data(conn, code, column_names):
-#     columns = column_names[code]
-#     columns[0] = "OA"
-#     return query_AWS_load_table(conn, "census_2021_joined", columns)

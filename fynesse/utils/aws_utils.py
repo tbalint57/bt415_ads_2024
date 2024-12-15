@@ -45,6 +45,8 @@ def add_key_to_table(conn, table_name, key):
 def upload_csv_to_table(conn, table_name, file_name):
     cur = conn.cursor()
     cur.execute(f"LOAD DATA LOCAL INFILE '{file_name}' INTO TABLE `{table_name}` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
+
+    delete_invalid_entries(conn, table_name, {"OA": ["OA"]}) # Brute force solution
     conn.commit()
 
 
@@ -56,10 +58,12 @@ def upload_data_from_file(conn, file, table_name, type, key):
     add_key_to_table(conn, table_name, key)
     upload_csv_to_table(conn, table_name, file)
 
+    delete_invalid_entries(conn, table_name, {"OA": ["OA"]}) # Brute force solution 
+
     print(f"Uploaded `{file}` to table `{table_name}` successfully!")
 
 
-def delete_invalid_values(conn, table_name, invalid_values):
+def delete_invalid_entries(conn, table_name, invalid_values):
     cursor = conn.cursor()
     conditions = []
     for column, values in invalid_values.items():

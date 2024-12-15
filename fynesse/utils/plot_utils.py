@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.colors as mcolors
 
 
 def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylabel=None):
@@ -98,17 +99,65 @@ def visualise_relationship(df, column_a, column_b):
 
 
 
+
 def visualise_feature_on_map(df, feature_name):
+    feature_min = df[feature_name].min()
+    feature_max = df[feature_name].max()
+    
+    normalized_feature = (df[feature_name] - feature_min) / (feature_max - feature_min)
+    
     scatter = plt.scatter(
         df['long'], df['lat'], 
-        c=df['value'], cmap='viridis', s=5, alpha=0.5
+        c=normalized_feature, cmap='viridis', s=5, alpha=0.5
     )
     
     cbar = plt.colorbar(scatter, orientation="vertical")
-    cbar.set_label("Value")
+    cbar.set_label(feature_name)
+    cbar.set_ticks(np.linspace(0, 1, num=5))
+    cbar.set_ticklabels([f"{feature_min:.2f}", 
+                         f"{(feature_min + (feature_max - feature_min) * 0.25):.2f}",
+                         f"{(feature_min + (feature_max - feature_min) * 0.5):.2f}",
+                         f"{(feature_min + (feature_max - feature_min) * 0.75):.2f}",
+                         f"{feature_max:.2f}"])
     
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
     plt.title(f"Visualization of {feature_name} on Map")
+    
+    plt.show()
+
+
+def visualise_feature_on_map_relative_to_median(df, feature_name):
+    feature_median = df[feature_name].median()
+    feature_min = df[feature_name].min()
+    feature_max = df[feature_name].max()
+    
+    difference_from_median = df[feature_name] - feature_median
+    
+    max_distance = max(abs(feature_min - feature_median), abs(feature_max - feature_median))
+    normalized_difference = difference_from_median / max_distance
+    
+    cmap = plt.get_cmap('coolwarm')
+    norm = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+    
+    scatter = plt.scatter(
+        df['long'], df['lat'], 
+        c=normalized_difference, cmap=cmap, norm=norm, s=5, alpha=0.5
+    )
+    
+    cbar = plt.colorbar(scatter, orientation="vertical")
+    cbar.set_label(f"Deviation from Median ({feature_name})")
+    cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
+    cbar.set_ticklabels([
+        f"{feature_min:.2f} (Min)", 
+        f"{0.5 * (feature_median + feature_min):.2f}",
+        f"{feature_median:.2f} (Median)", 
+        f"{0.5 * (feature_median + feature_median):.2f}",
+        f"{feature_max:.2f} (Max)"
+    ])
+    
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title(f"Visualization of {feature_name} (Deviation from Median) on Map")
     
     plt.show()
