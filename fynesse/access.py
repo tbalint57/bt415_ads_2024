@@ -518,11 +518,11 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     aws_utils.upload_data_from_df(conn, nearby_public_transport_stops_df ,"nearby_stops", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_public_transport_stops_df.columns) - 1)], "OA")
 
     nearby_amenity_non_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_non_transport_index_file, process_func=amenity_data_extractor)
-    nearby_amenity_non_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_non_transport.tolist()).fillna(0).astype(int)], axis=1)
+    nearby_amenity_non_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_non_transport).fillna(0).astype(int)], axis=1)
     aws_utils.upload_data_from_df(conn, nearby_amenity_non_transport_df ,"nearby_amenity_non_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_non_transport_df.columns) - 1)], "OA")
 
     nearby_amenity_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_transport_index_file, process_func=amenity_data_extractor)
-    nearby_amenity_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_transport.tolist()).fillna(0).astype(int)], axis=1)
+    nearby_amenity_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_transport).fillna(0).astype(int)], axis=1)
     aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 1)], "OA")
 
 
