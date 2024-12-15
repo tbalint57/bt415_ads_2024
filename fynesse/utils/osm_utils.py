@@ -9,6 +9,10 @@ from rtree import index
 
 
 def filter_by_number_of_tags(input_file, output_file, min_num_tags=2):
+    if os.path.exists(f"{input_file}"):
+        print(f"`{output_file}` already exists")
+        return
+    
     class NodeFilterHandlerFilter(osmium.SimpleHandler):
         def __init__(self):
             super(NodeFilterHandlerFilter, self).__init__()
@@ -29,6 +33,10 @@ def filter_by_number_of_tags(input_file, output_file, min_num_tags=2):
 
 
 def filter_and_save_selected_tags_only(input_file, output_file, selected_tags):
+    if os.path.exists(f"{input_file}"):
+        print(f"`{output_file}` already exists")
+        return
+    
     class PublicTransportFilter(osmium.SimpleHandler):
         def __init__(self, output_file):
             super().__init__()
@@ -60,6 +68,10 @@ def filter_and_save_selected_tags_only(input_file, output_file, selected_tags):
 
 
 def filter_and_save_node(input_file, output_file, selected_tags):
+    if os.path.exists(f"{input_file}"):
+        print(f"`{output_file}` already exists")
+        return
+    
     class PublicTransportFilter(osmium.SimpleHandler):
         def __init__(self, output_file):
             super().__init__()

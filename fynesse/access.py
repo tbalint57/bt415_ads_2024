@@ -449,7 +449,7 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     osm_utils.build_and_save_index(amenity_non_transport_file, amenity_non_transport_index_file)
     osm_utils.build_and_save_index(amenity_transport_file, amenity_transport_index_file)
 
-    oa_cords_table_name = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
+    oa_cords_table_name = "oa_cords"
 
     oa_cords_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
     oa_id_df = oa_cords_df[["OA"]]
