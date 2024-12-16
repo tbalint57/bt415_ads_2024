@@ -179,9 +179,14 @@ def plot_values_increasing(features_df, plot_size=(9, 9), title="Sorted Feature 
     plt.show()
 
 
-def plot_values_distribution(features_df, plot_size=(6, 6), title="Values by Frequency"):
-    plot_grid = (int(math.ceil(len(features_df.columns) / 3)), min(3, len(features_df)))
-    fig, axes = plt.subplots(plot_grid[0], plot_grid[1], figsize=plot_size)
+def plot_values_distribution(features_df, base_figsize=(6, 6), title="Values by Frequency"):
+    rows = int(math.ceil(len(features_df.columns[2:]) / 3))
+    cols = min(3, len(features_df.columns[2:]))
+    
+    plot_size_x = base_figsize[0] * cols
+    plot_size_y = base_figsize[1] * rows
+    fig, axes = plt.subplots(rows, cols, figsize=(plot_size_x, plot_size_y), constrained_layout=True)
+
     axes = axes.flatten()
 
     for i, column in enumerate(features_df.columns):
@@ -204,10 +209,15 @@ def plot_values_distribution(features_df, plot_size=(6, 6), title="Values by Fre
     plt.show()
     
 
-def plot_values_on_map_relative_to_median(features_df, plot_size=(6, 6)):
-    plot_grid = (int(math.ceil(len(features_df.columns) / 3)), min(3, len(features_df)))
-    fig, axes = plt.subplots(plot_grid[0], plot_grid[1], figsize=(plot_size))
-    axes = axes.flatten()  # Flatten axes for easy iteration
+def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
+    rows = int(math.ceil(len(features_df.columns[2:]) / 3))
+    cols = min(3, len(features_df.columns[2:]))
+    
+    plot_size_x = base_figsize[0] * cols
+    plot_size_y = base_figsize[1] * rows
+    fig, axes = plt.subplots(rows, cols, figsize=(plot_size_x, plot_size_y), constrained_layout=True)
+
+    axes = axes.flatten()
     feature_names = features_df.columns[2:]
 
     for i, feature_name in enumerate(feature_names):
