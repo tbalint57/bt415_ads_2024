@@ -97,12 +97,12 @@ def plot_clusters(df):
         
         for _, row in cluster_data.iterrows():
             plt.text(
-                row["longitude"], row["latitude"], row["location"],
+                row["latitude"], row["longitude"], row["location"],
                 fontsize=8, ha="right"
             )
             
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
+    plt.xlabel("Latitude")
+    plt.ylabel("Longitude")
     plt.title("Clustered Locations")
     plt.legend()
     plt.grid(True)
@@ -276,7 +276,7 @@ def compare_two_tables(conn, code_a, code_b):
 
 
 def visualise_feature_on_map(conn, feature):
-    transport_field_names = ["long", "lat", feature]
+    transport_field_names = ["lat", "long", feature]
     car_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
 
     plt.figure(figsize=(12, 12))
@@ -285,11 +285,14 @@ def visualise_feature_on_map(conn, feature):
 
 
 def visualise_all_transport_usages_on_map(conn):
-    transport_field_names = ["long", "lat", "TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+    transport_field_names = ["lat", "long", "TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
     response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
 
-    plt.figure(figsize=(12, 12))
     for feature_name in transport_field_names:
+        if feature_name in ["lat", "long"]:
+            continue
+        
+        plt.figure(figsize=(12, 12))
         plot_utils.visualise_feature_on_map_relative_to_median(response_df, feature_name)
         plt.show()
 

@@ -98,8 +98,6 @@ def visualise_relationship(df, column_a, column_b):
     plt.title("Relationship between " + column_a + " and " + column_b)
 
 
-
-
 def visualise_feature_on_map(df, feature_name):
     feature_min = df[feature_name].min()
     feature_max = df[feature_name].max()
@@ -107,7 +105,7 @@ def visualise_feature_on_map(df, feature_name):
     normalized_feature = (df[feature_name] - feature_min) / (feature_max - feature_min)
     
     scatter = plt.scatter(
-        df['long'], df['lat'], 
+        df['lat'], df['long'], 
         c=normalized_feature, cmap='viridis', s=5, alpha=0.5
     )
     

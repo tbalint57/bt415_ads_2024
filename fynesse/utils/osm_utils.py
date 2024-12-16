@@ -33,7 +33,7 @@ def filter_by_number_of_tags(input_file, output_file, min_num_tags=2):
 
 
 def filter_and_save_selected_tags_only(input_file, output_file, selected_tags):
-    if os.path.exists(f"{input_file}"):
+    if os.path.exists(f"{output_file}"):
         print(f"`{output_file}` already exists")
         return
     
@@ -68,7 +68,7 @@ def filter_and_save_selected_tags_only(input_file, output_file, selected_tags):
 
 
 def filter_and_save_node(input_file, output_file, selected_tags):
-    if os.path.exists(f"{input_file}"):
+    if os.path.exists(f"{output_file}"):
         print(f"`{output_file}` already exists")
         return
     

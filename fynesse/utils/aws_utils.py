@@ -82,7 +82,7 @@ def query_AWS_load_table(conn, table_name, columns=None):
     if columns is None:
         query_str = f"SELECT * FROM {table_name};"
     else:
-        cols = ", ".join(columns)
+        cols = ", ".join([f"`{column}`" for column in columns])
         query_str = f"SELECT {cols} FROM {table_name};"
     
     cur = conn.cursor()
