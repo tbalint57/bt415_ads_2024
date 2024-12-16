@@ -193,143 +193,143 @@ def visualise_census_data_locally(conn, code, lat, lon):
 # ----- ===== -----
 
 
-def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
-    feature_df = features_df[merge_on + [field_name]]
-    df = pd.merge(feature_df, goal_df, on=merge_on)
+# def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
+#     feature_df = features_df[merge_on + [field_name]]
+#     df = pd.merge(feature_df, goal_df, on=merge_on)
 
-    for goal_col in goal_df.columns:
-        if goal_col in merge_on:
-            continue
+#     for goal_col in goal_df.columns:
+#         if goal_col in merge_on:
+#             continue
             
-        a, b = np.polyfit(df[field_name], df[goal_col], 1)
-        plt.plot(df[field_name], a*df[field_name]+b, label=goal_col)
+#         a, b = np.polyfit(df[field_name], df[goal_col], 1)
+#         plt.plot(df[field_name], a*df[field_name]+b, label=goal_col)
 
-    plt.xlabel(field_name)
-    plt.ylabel("Goal values")
-    plt.title("Relationship between " + field_name + " and the mode of transportation")
+#     plt.xlabel(field_name)
+#     plt.ylabel("Goal values")
+#     plt.title("Relationship between " + field_name + " and the mode of transportation")
 
-    plt.legend() 
-    plt.show() 
+#     plt.legend() 
+#     plt.show() 
 
 
-def calculate_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
-    feature_df = features_df[merge_on + [field_name]]
-    df = pd.merge(feature_df, goal_df, on=merge_on)
+# def calculate_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
+#     feature_df = features_df[merge_on + [field_name]]
+#     df = pd.merge(feature_df, goal_df, on=merge_on)
 
-    avg, mx = 0, 0 
+#     avg, mx = 0, 0 
 
-    for goal_col in goal_df.columns:
-        if goal_col in merge_on:
-            continue
+#     for goal_col in goal_df.columns:
+#         if goal_col in merge_on:
+#             continue
             
-        a, b = np.polyfit(df[field_name], df[goal_col], 1)
-        avg += a
-        mx = max(mx, abs(a))
+#         a, b = np.polyfit(df[field_name], df[goal_col], 1)
+#         avg += a
+#         mx = max(mx, abs(a))
     
-    avg /= len(goal_df.columns) - 1
+#     avg /= len(goal_df.columns) - 1
 
-    return avg, mx
+#     return avg, mx
 
 
-def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["OA"]):
-    df = pd.merge(feature_df, goal_df, on=merge_on)
+# def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["OA"]):
+#     df = pd.merge(feature_df, goal_df, on=merge_on)
     
-    plt.figure(figsize=(6, 4))
-    plt.scatter(df[input_col], df[goal_col], alpha=0.7)
-    plt.title(f'{input_col} vs {goal_col}')
-    plt.xlabel(input_col)
-    plt.ylabel(goal_col)
-    plt.grid(True)
-    plt.show()
+#     plt.figure(figsize=(6, 4))
+#     plt.scatter(df[input_col], df[goal_col], alpha=0.7)
+#     plt.title(f'{input_col} vs {goal_col}')
+#     plt.xlabel(input_col)
+#     plt.ylabel(goal_col)
+#     plt.grid(True)
+#     plt.show()
 
 
-def visualise_transport_data(conn):
-    field_names = ["TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", field_names)
-    plt.figure(figsize=(18, 6))
-    plot_utils.visualise_feature_values_increasing(transport_df)
-    plt.show()
+# def visualise_transport_data(conn):
+#     field_names = ["TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+#     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", field_names)
+#     plt.figure(figsize=(18, 6))
+#     plot_utils.visualise_feature_values_increasing(transport_df)
+#     plt.show()
 
 
-def visualise_transport_data_outliers(conn, number_of_outiers=5000):
-    transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
-    plt.figure(figsize=(18, 6))
-    plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
-    plt.show()
+# def visualise_transport_data_outliers(conn, number_of_outiers=5000):
+#     transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+#     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
+#     plt.figure(figsize=(18, 6))
+#     plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
+#     plt.show()
 
 
-def compare_two_tables(conn, code_a, code_b):
-    column_names = {
-        "TS001": ["household", "communal"],
-        "TS002": ["never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
-        "TS003": ["one_person", "single_family", "other"],
-        "TS004": ["UK", "EU", "Europe_non_EU", "Africa", "Asia", "Americas", "Australia_Oceania_Antarctica", "British_Overseas"],
-        "TS007": ["4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
-        "TS011": ["0", "1", "2", "3", "4"],
-        "TS016": ["born_in_UK", "10_plus", "5_to_10", "2_to_5", "5_minus"],
-        "TS017": ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
-        "TS018": ["born_in_UK", "4_minus", "5_to_7", "8_to_9", "10_to_14", "15", "16_to_17", "18_to_19", "20_to_24", "25_to_29", "30_to_44", "45_to_59", "60_to_64", "65_to_74", "75_to_84", "85_to_89", "90_plus"],
-        "TS019": ["enumeration_address", "student_address", "UK_address", "non_UK_address"],
-        "TS021": ["asian", "black", "mixed", "white", "other"],
-        "TS025": ["all_english_or_welsh", "some_adult_english_or_welsh", "some_child_english_or_welsh", "no_english_or_welsh"],
-        "TS029": ["main_language_english", "main_language_not_english"],
-        "TS030": ["no_religion", "christian", "buddhist", "hindu", "jewish", "muslim", "sikh", "other", "not_answered"],
-        "TS037": ["very_good", "good", "fair", "bad", "very_bad"],
-        "TS038": ["limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
-        "TS039": ["none", "19_minus", "20_to_49", "50_plus"],
-        "TS040": ["none", "1", "2_plus"],
-        "TS058": ["2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
-        "TS059": ["15_minus", "16_to_30", "31_to_48", "49_plus"],
-        "TS060": ["A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
-        "TS061": ["working_from_home", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
-        "TS062": ["L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
-        "TS063": ["manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
-        "TS065": ["employed", "unemployed", "never_been_employed"],
-        "TS066": ["active_non_student", "active_student", "inactive", "other"],
-        "TS067": ["none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
-        "TS068": ["student", "not_student"],
-        "TS077": ["heterosexual", "homosexual", "bisexual", "other", "no_answer"],
-        "TS078": ["same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "other", "no_answer"]
-    }
-    columns_a = [code_a + column_name for column_name in column_names[code_a]]
-    columns_b = [code_b + column_name for column_name in column_names[code_b]]
+# def compare_two_tables(conn, code_a, code_b):
+#     column_names = {
+#         "TS001": ["household", "communal"],
+#         "TS002": ["never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
+#         "TS003": ["one_person", "single_family", "other"],
+#         "TS004": ["UK", "EU", "Europe_non_EU", "Africa", "Asia", "Americas", "Australia_Oceania_Antarctica", "British_Overseas"],
+#         "TS007": ["4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
+#         "TS011": ["0", "1", "2", "3", "4"],
+#         "TS016": ["born_in_UK", "10_plus", "5_to_10", "2_to_5", "5_minus"],
+#         "TS017": ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
+#         "TS018": ["born_in_UK", "4_minus", "5_to_7", "8_to_9", "10_to_14", "15", "16_to_17", "18_to_19", "20_to_24", "25_to_29", "30_to_44", "45_to_59", "60_to_64", "65_to_74", "75_to_84", "85_to_89", "90_plus"],
+#         "TS019": ["enumeration_address", "student_address", "UK_address", "non_UK_address"],
+#         "TS021": ["asian", "black", "mixed", "white", "other"],
+#         "TS025": ["all_english_or_welsh", "some_adult_english_or_welsh", "some_child_english_or_welsh", "no_english_or_welsh"],
+#         "TS029": ["main_language_english", "main_language_not_english"],
+#         "TS030": ["no_religion", "christian", "buddhist", "hindu", "jewish", "muslim", "sikh", "other", "not_answered"],
+#         "TS037": ["very_good", "good", "fair", "bad", "very_bad"],
+#         "TS038": ["limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
+#         "TS039": ["none", "19_minus", "20_to_49", "50_plus"],
+#         "TS040": ["none", "1", "2_plus"],
+#         "TS058": ["2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
+#         "TS059": ["15_minus", "16_to_30", "31_to_48", "49_plus"],
+#         "TS060": ["A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
+#         "TS061": ["working_from_home", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
+#         "TS062": ["L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
+#         "TS063": ["manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
+#         "TS065": ["employed", "unemployed", "never_been_employed"],
+#         "TS066": ["active_non_student", "active_student", "inactive", "other"],
+#         "TS067": ["none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
+#         "TS068": ["student", "not_student"],
+#         "TS077": ["heterosexual", "homosexual", "bisexual", "other", "no_answer"],
+#         "TS078": ["same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "other", "no_answer"]
+#     }
+#     columns_a = [code_a + column_name for column_name in column_names[code_a]]
+#     columns_b = [code_b + column_name for column_name in column_names[code_b]]
         
-    response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", ["OA"] + columns_a + columns_b)
+#     response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", ["OA"] + columns_a + columns_b)
 
-    a_df = response_df[["OA"] + columns_a]
-    b_df = response_df[["OA"] + columns_b]
+#     a_df = response_df[["OA"] + columns_a]
+#     b_df = response_df[["OA"] + columns_b]
 
-    plt.figure(figsize=(9, 3 * len(columns_a)))
-    plot_utils.visualise_relationship_by_components(a_df, b_df)
-    plt.show()
-
-
-def visualise_feature_on_map(conn, feature):
-    transport_field_names = ["lat", "long", feature]
-    car_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
-
-    plt.figure(figsize=(12, 12))
-    plot_utils.visualise_feature_on_map_relative_to_median(car_df, "TS061_car_driving")
-    plt.show()
+#     plt.figure(figsize=(9, 3 * len(columns_a)))
+#     plot_utils.visualise_relationship_by_components(a_df, b_df)
+#     plt.show()
 
 
-def visualise_all_transport_usages_on_map(conn):
-    transport_field_names = ["lat", "long", "TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-    response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
+# def visualise_feature_on_map(conn, feature):
+#     transport_field_names = ["lat", "long", feature]
+#     car_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
 
-    for feature_name in transport_field_names:
-        if feature_name in ["lat", "long"]:
-            continue
-
-        plt.figure(figsize=(12, 12))
-        plot_utils.visualise_feature_on_map_relative_to_median(response_df, feature_name)
-        plt.show()
+#     plt.figure(figsize=(12, 12))
+#     plot_utils.visualise_feature_on_map_relative_to_median(car_df, "TS061_car_driving")
+#     plt.show()
 
 
-def visualise_relationship_between_two_fields(conn, field_a, field_b, table_name="normalised_census_data"):
-    response_df = aws_utils.query_AWS_load_table(conn, table_name, [field_b, field_a])
+# def visualise_all_transport_usages_on_map(conn):
+#     transport_field_names = ["lat", "long", "TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
+#     response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
 
-    plt.figure(figsize=(9, 9))
-    plot_utils.visualise_relationship(response_df, field_a, field_b)
-    plt.show()
+#     for feature_name in transport_field_names:
+#         if feature_name in ["lat", "long"]:
+#             continue
+
+#         plt.figure(figsize=(12, 12))
+#         plot_utils.visualise_feature_on_map_relative_to_median(response_df, feature_name)
+#         plt.show()
+
+
+# def visualise_relationship_between_two_fields(conn, field_a, field_b, table_name="normalised_census_data"):
+#     response_df = aws_utils.query_AWS_load_table(conn, table_name, [field_b, field_a])
+
+#     plt.figure(figsize=(9, 9))
+#     plot_utils.visualise_relationship(response_df, field_a, field_b)
+#     plt.show()

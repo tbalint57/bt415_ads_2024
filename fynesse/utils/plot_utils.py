@@ -211,6 +211,7 @@ def plot_values_distribution(features_df, base_figsize=(6, 6), title="Values by 
     
 
 def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6, 6)):
+    filtered_df = features_df
     if loc is not None:
         lat, lon = loc
         filtered_df = pandas_utils.filter_by_cords(features_df, lat, lon, size_km=10)
