@@ -238,8 +238,17 @@ def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
                 c=normalized_difference, cmap=cmap, norm=norm, s=5, alpha=0.5
             )
 
+            # Associate colorbar explicitly with the subplot
             cbar = fig.colorbar(scatter, ax=axes[i], orientation="vertical")
             cbar.set_label(f"Deviation from Median ({feature_name})")
+            cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
+            cbar.set_ticklabels([
+                f"{feature_min:.2f} (Min)", 
+                f"{0.5 * (feature_median + feature_min):.2f}",
+                f"{feature_median:.2f} (Median)", 
+                f"{0.5 * (feature_median + feature_max):.2f}",
+                f"{feature_max:.2f} (Max)"
+            ])
 
             axes[i].set_title(feature_name)
             axes[i].set_xlabel("Longitude")
@@ -248,8 +257,7 @@ def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
     # Hide unused subplots
     for j in range(i + 1, len(axes)):
         axes[j].set_visible(False)
-    
-    plt.tight_layout()
+
     plt.show()
 
 
