@@ -169,7 +169,7 @@ def plot_values_increasing(features_df, plot_size=(9, 9), title="Sorted Feature 
     plt.figure(figsize=plot_size)
 
     for column in features_df.columns:
-        plt.plot(sorted(features_df[column], label=column))
+        plt.plot(sorted(features_df[column]), label=column)
 
     plt.legend(title="Features")
     plt.xlabel("n-th lowest value")
@@ -241,7 +241,6 @@ def plot_values_on_map_relative_to_median(features_df, plot_size=(6, 6)):
     
     plt.tight_layout()
     plt.show()
-
 
 
 def plot_feature_on_map_relative_to_median(df, feature_name):
