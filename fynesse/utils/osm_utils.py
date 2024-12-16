@@ -9,7 +9,7 @@ from rtree import index
 
 
 def filter_by_number_of_tags(input_file, output_file, min_num_tags=2):
-    if os.path.exists(f"{input_file}"):
+    if os.path.exists(f"{output_file}"):
         print(f"`{output_file}` already exists")
         return
     
