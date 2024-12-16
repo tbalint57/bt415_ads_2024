@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib.colors as mcolors
+import math
 
 
 def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylabel=None):
@@ -125,7 +126,7 @@ def visualise_feature_on_map(df, feature_name):
     plt.show()
 
 
-def visualise_feature_on_map_relative_to_median(df, feature_name):
+def plot_feature_on_map_relative_to_median(df, feature_name):
     feature_median = df[feature_name].median()
     feature_min = df[feature_name].min()
     feature_max = df[feature_name].max()
@@ -159,3 +160,124 @@ def visualise_feature_on_map_relative_to_median(df, feature_name):
     plt.title(f"Visualization of {feature_name} (Deviation from Median) on Map")
     
     plt.show()
+
+
+# ----- ===== -----
+
+
+def plot_values_increasing(features_df, plot_size=(9, 9), title="Sorted Feature Values"):
+    plt.figure(figsize=plot_size)
+
+    for column in features_df.columns:
+        plt.plot(sorted(features_df[column], label=column))
+
+    plt.legend(title="Features")
+    plt.xlabel("n-th lowest value")
+    plt.ylabel("value")
+    plt.title(title)
+    plt.grid(True)
+    plt.show()
+
+
+def plot_values_distribution(features_df, plot_size=(6, 6), title="Values by Frequency"):
+    plot_grid = (int(math.ceil(len(features_df.columns) / 3)), min(3, len(features_df)))
+    fig, axes = plt.subplots(plot_grid[0], plot_grid[1], figsize=plot_size)
+    axes = axes.flatten()
+
+    for i, column in enumerate(features_df.columns):
+        if i < len(axes):
+            axes[i].hist(features_df[column], bins=50, alpha=0.7)
+            median = features_df[column].median()  # Calculate the median
+            axes[i].axvline(median, color='red', linestyle='--', label=f'Median: {median:.2f}')
+            axes[i].set_title(f"{title} : {column}")
+            axes[i].set_xlabel("Value")
+            axes[i].set_ylabel("Frequency")
+            axes[i].legend()
+    
+    # Hide unused subplots
+    for j in range(i + 1, len(axes)):
+        axes[j].set_visible(False)
+
+
+    plt.title(title)
+    plt.tight_layout()
+    plt.show()
+    
+
+def plot_values_on_map_relative_to_median(features_df, plot_size=(6, 6)):
+    plot_grid = (int(math.ceil(len(features_df.columns) / 3)), min(3, len(features_df)))
+    fig, axes = plt.subplots(plot_grid[0], plot_grid[1], figsize=(plot_size))
+    axes = axes.flatten()  # Flatten axes for easy iteration
+    feature_names = features_df.columns[2:]
+
+    for i, feature_name in enumerate(feature_names):
+        if i < len(axes):  # Ensure we don't exceed the number of available subplots
+            feature_median = features_df[feature_name].median()
+            feature_min = features_df[feature_name].min()
+            feature_max = features_df[feature_name].max()
+
+            difference_from_median = features_df[feature_name] - feature_median
+            max_distance = max(abs(feature_min - feature_median), abs(feature_max - feature_median))
+            normalized_difference = difference_from_median / max_distance
+
+            cmap = plt.get_cmap('coolwarm')
+            norm = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+
+            scatter = axes[i].scatter(
+                features_df['long'], features_df['lat'], 
+                c=normalized_difference, cmap=cmap, norm=norm, s=5, alpha=0.5
+            )
+
+            cbar = fig.colorbar(scatter, ax=axes[i], orientation="vertical")
+            cbar.set_label(f"Deviation from Median ({feature_name})")
+
+            axes[i].set_title(feature_name)
+            axes[i].set_xlabel("Longitude")
+            axes[i].set_ylabel("Latitude")
+
+    # Hide unused subplots
+    for j in range(i + 1, len(axes)):
+        axes[j].set_visible(False)
+    
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_feature_on_map_relative_to_median(df, feature_name):
+    feature_median = df[feature_name].median()
+    feature_min = df[feature_name].min()
+    feature_max = df[feature_name].max()
+    
+    difference_from_median = df[feature_name] - feature_median
+    
+    max_distance = max(abs(feature_min - feature_median), abs(feature_max - feature_median))
+    normalized_difference = difference_from_median / max_distance
+    
+    cmap = plt.get_cmap('coolwarm')
+    norm = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+    
+    scatter = plt.scatter(
+        df['long'], df['lat'], 
+        c=normalized_difference, cmap=cmap, norm=norm, s=5, alpha=0.5
+    )
+    
+    cbar = plt.colorbar(scatter, orientation="vertical")
+    cbar.set_label(f"Deviation from Median ({feature_name})")
+    cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
+    cbar.set_ticklabels([
+        f"{feature_min:.2f} (Min)", 
+        f"{0.5 * (feature_median + feature_min):.2f}",
+        f"{feature_median:.2f} (Median)", 
+        f"{0.5 * (feature_median + feature_median):.2f}",
+        f"{feature_max:.2f} (Max)"
+    ])
+    
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.title(f"Visualization of {feature_name} (Deviation from Median) on Map")
+    
+    plt.show()
+
+
+

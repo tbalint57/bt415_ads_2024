@@ -45,3 +45,20 @@ def normalise_data_frame_by_rows(df, columns_to_leave_out=[]):
     normalised_df[columns_to_leave_out] = df[columns_to_leave_out]
 
     return normalised_df
+
+
+def filter_by_cords(df, lat, lon, size_km):
+    degree_per_km = 1 / 111
+    half_size_degree = size_km * degree_per_km / 2
+
+    lat_min = lat - half_size_degree
+    lat_max = lat + half_size_degree
+    lon_min = lon - half_size_degree
+    lon_max = lon + half_size_degree
+
+    filtered_df = df[
+        (df['lat'] >= lat_min) & (df['lat'] <= lat_max) &
+        (df['long'] >= lon_min) & (df['long'] <= lon_max)
+    ]
+
+    return filtered_df

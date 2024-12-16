@@ -367,6 +367,48 @@ def calculate_close_points(lats, longs, distance_km=0.2):
     return neighbors_count
 
 
+def get_census_data_column_names():
+    column_names = {
+        "TS001": ["id", "household", "communal"],
+        "TS002": ["id", "never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
+        "TS003": ["id", "one_person", "single_family", "other"],
+        "TS004": ["id", "UK", "EU", "Europe_non_EU", "Africa", "Asia", "Americas", "Australia_Oceania_Antarctica", "British_Overseas"],
+        "TS007": ["id", "4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
+        "TS011": ["id", "0", "1", "2", "3", "4"],
+        "TS016": ["id", "born_in_UK", "10_plus", "5_to_10", "2_to_5", "5_minus"],
+        "TS017": ["id", "0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
+        "TS018": ["id", "born_in_UK", "4_minus", "5_to_7", "8_to_9", "10_to_14", "15", "16_to_17", "18_to_19", "20_to_24", "25_to_29", "30_to_44", "45_to_59", "60_to_64", "65_to_74", "75_to_84", "85_to_89", "90_plus"],
+        "TS019": ["id", "enumeration_address", "student_address", "UK_address", "non_UK_address"],
+        "TS021": ["id", "asian", "black", "mixed", "white", "other"],
+        "TS025": ["id", "all_english_or_welsh", "some_adult_english_or_welsh", "some_child_english_or_welsh", "no_english_or_welsh"],
+        "TS029": ["id", "main_language_english", "main_language_not_english"],
+        "TS030": ["id", "no_religion", "christian", "buddhist", "hindu", "jewish", "muslim", "sikh", "other", "not_answered"],
+        "TS037": ["id", "very_good", "good", "fair", "bad", "very_bad"],
+        "TS038": ["id", "limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
+        "TS039": ["id", "none", "19_minus", "20_to_49", "50_plus"],
+        "TS040": ["id", "none", "1", "2_plus"],
+        "TS058": ["id", "2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
+        "TS059": ["id", "15_minus", "16_to_30", "31_to_48", "49_plus"],
+        "TS060": ["id", "A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
+        "TS061": ["id", "working_from_home", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
+        "TS062": ["id", "L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
+        "TS063": ["id", "manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
+        "TS065": ["id", "employed", "unemployed", "never_been_employed"],
+        "TS066": ["id", "active_non_student", "active_student", "inactive", "other"],
+        "TS067": ["id", "none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
+        "TS068": ["id", "student", "not_student"],
+        "TS077": ["id", "heterosexual", "homosexual", "bisexual", "other", "no_answer"],
+        "TS078": ["id", "same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "other", "no_answer"]
+    }
+
+    codes = column_names.keys()
+
+    for code in codes:
+        column_names[code] = [code + "_" + column_name for column_name in column_names[code][1:]]
+
+    return column_names
+
+
 #OSM
 
 
