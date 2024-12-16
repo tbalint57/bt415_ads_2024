@@ -166,7 +166,7 @@ def get_building_addresses_in_region(latitude, longitude, distance_km=1):
 # Functions to evaluate the rest of the census data
 def visualise_census_data_values(conn, code):
     columns = access.get_census_data_column_names()[code]
-    transport_df = aws_utils.query_AWS_load_table(conn, "census_data", columns)
+    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_increasing(transport_df, title="Value Set of Trensport Data")
 
 
@@ -177,7 +177,7 @@ def visualise_census_data_distribution(conn, code):
 
 
 def visualise_census_by_distance_from_median_on_map(conn, code):
-    columns = access.get_census_data_column_names()[code]
+    columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_on_map_relative_to_median(transport_df, plot_size=(16, 12))
 
