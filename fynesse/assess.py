@@ -173,20 +173,20 @@ def visualise_census_data_values(conn, code):
 def visualise_census_data_distribution(conn, code):
     columns = access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_distribution(transport_df, plot_size=(16, 12))
+    plot_utils.plot_values_distribution(transport_df)
 
 
 def visualise_census_by_distance_from_median_on_map(conn, code):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_on_map_relative_to_median(transport_df, plot_size=(16, 12))
+    plot_utils.plot_values_on_map_relative_to_median(transport_df)
 
 
 def visualise_census_data_locally(conn, code, lat, lon):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     filtered_df = pandas_utils.filter_by_cords(transport_df, lat, lon, size_km=10)
-    plot_utils.plot_values_on_map_relative_to_median(filtered_df, plot_size=(16, 12))
+    plot_utils.plot_values_on_map_relative_to_median(filtered_df)
 
 
 
