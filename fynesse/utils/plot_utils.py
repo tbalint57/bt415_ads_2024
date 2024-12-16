@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib.colors as mcolors
+from . import pandas_utils
 import math
 
 
@@ -209,7 +210,11 @@ def plot_values_distribution(features_df, base_figsize=(6, 6), title="Values by 
     plt.show()
     
 
-def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
+def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6, 6)):
+    if loc is not None:
+        lat, lon = loc
+        filtered_df = pandas_utils.filter_by_cords(features_df, lat, lon, size_km=10)
+    
     rows = int(math.ceil(len(features_df.columns[2:]) / 3))
     cols = min(3, len(features_df.columns[2:]))
     
@@ -226,7 +231,7 @@ def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
             feature_min = features_df[feature_name].min()
             feature_max = features_df[feature_name].max()
 
-            difference_from_median = features_df[feature_name] - feature_median
+            difference_from_median = filtered_df[feature_name] - feature_median
             max_distance = max(abs(feature_min - feature_median), abs(feature_max - feature_median))
             normalized_difference = difference_from_median / max_distance
 
@@ -234,7 +239,7 @@ def plot_values_on_map_relative_to_median(features_df, base_figsize=(6, 6)):
             norm = mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
 
             scatter = axes[i].scatter(
-                features_df['long'], features_df['lat'], 
+                filtered_df['long'], filtered_df['lat'], 
                 c=normalized_difference, cmap=cmap, norm=norm, s=5, alpha=0.5
             )
 
