@@ -163,7 +163,7 @@ def get_building_addresses_in_region(latitude, longitude, distance_km=1):
 # ----- ===== -----
 
 
-# Functions to evaluate the rest of the census data
+# Functions to visualise the census data
 def visualise_census_data_values(conn, code):
     columns = access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
@@ -186,6 +186,33 @@ def visualise_census_data_locally(conn, code, lat, lon):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_on_map_relative_to_median(transport_df, loc=(lat, lon))
+
+
+# Functions to visualise the osm data
+def visualise_osm_data_values(conn, columns=None):
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    plot_utils.plot_values_increasing(transport_df, title="Value Set of Trensport Data")
+
+
+def visualise_osm_data_distribution(conn, columns=None):
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    plot_utils.plot_values_distribution(transport_df)
+
+
+def visualise_osm_by_distance_from_median_on_map(conn, columns=None):
+    if columns is not None:
+        columns = ["lat", "long"] + access.get_census_data_column_names()
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(transport_df)
+
+
+def visualise_osm_data_locally(conn, lat, lon, columns=None):
+    if columns is not None:
+        columns = ["lat", "long"] + access.get_census_data_column_names()
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(transport_df, loc=(lat, lon))
+
+# Functions to visualise the osm data
 
 
 
@@ -305,13 +332,12 @@ def visualise_census_data_locally(conn, code, lat, lon):
 #     plt.show()
 
 
-# def visualise_feature_on_map(conn, feature):
-#     transport_field_names = ["lat", "long", feature]
-#     car_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
+def visualise_feature_on_map(conn, feature):
+    feature_names = ["lat", "long", feature]
+    feature_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", feature_names)
 
-#     plt.figure(figsize=(12, 12))
-#     plot_utils.visualise_feature_on_map_relative_to_median(car_df, "TS061_car_driving")
-#     plt.show()
+    plot_utils.plot_values_on_map_relative_to_median(feature_df, base_figsize=(9, 9))
+    plt.show()
 
 
 # def visualise_all_transport_usages_on_map(conn):

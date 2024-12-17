@@ -239,6 +239,18 @@ def upload_ONS_data(conn,
 # Cesnus
 
 
+def calculate_close_points(lats, longs, distance_km=0.5):
+    distance_cords = distance_km / 111
+
+    points_2d = np.column_stack((lats, longs))
+
+    tree = cKDTree(points_2d)
+
+    neighbors_count = tree.query_ball_point(points_2d, r=distance_cords, return_length=True) - 1
+
+    return neighbors_count
+
+
 def upload_census_data(conn, 
                     base_dir="census_data", 
                     columns_to_drop=None, 
@@ -345,6 +357,9 @@ def upload_census_data(conn,
         normalised_census_df = pandas_utils.normalise_data_frame_by_rows(census_df, ["OA"])
         normalised_joined_df = pd.merge(normalised_joined_df, normalised_census_df, on=["OA"], how="inner")
 
+    joined_df["density"] = calculate_close_points(joined_df["lat"], joined_df["long"])
+    normalised_joined_df["density"] = joined_df["density"] / max(joined_df["density"])
+
     print(f"\nUploading census data")
     joined_types += ["int(32)" for _ in range(len(joined_df.columns) - 3)]
     normalised_joined_types += ["float(32)" for _ in range(len(joined_df.columns) - 3)]
@@ -353,18 +368,6 @@ def upload_census_data(conn,
     aws_utils.upload_data_from_df(conn, normalised_joined_df, "normalised_census_data", normalised_joined_types, "OA")
     
     print("\nCensus Data Successfully Uploaded!")
-
-
-def calculate_close_points(lats, longs, distance_km=0.2):
-    distance_cords = distance_km / 111
-
-    points_2d = np.column_stack((lats, longs))
-
-    tree = cKDTree(points_2d)
-
-    neighbors_count = tree.query_ball_point(points_2d, r=distance_cords, return_length=True)
-
-    return neighbors_count
 
 
 def get_census_data_column_names():
@@ -494,7 +497,6 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     oa_cords_table_name = "oa_cords"
 
     oa_cords_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
-    oa_id_df = oa_cords_df[["OA"]]
 
     latitudes = oa_cords_df["lat"].to_numpy()
     longitudes = oa_cords_df["long"].to_numpy()
@@ -556,17 +558,17 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     nearby_public_transport_stops = osm_utils.query_osm_in_batch(latitudes, longitudes, public_transport_stops_index_file, process_func=stops_data_extractor)
     stops_dicts = [transport_stops_record[0] for transport_stops_record in nearby_public_transport_stops]
     bus_stops_dicts = [transport_stops_record[1] for transport_stops_record in nearby_public_transport_stops]
-    nearby_public_transport_stops_df = pd.concat([oa_id_df, pd.DataFrame(stops_dicts), pd.DataFrame(bus_stops_dicts)], axis=1)
+    nearby_public_transport_stops_df = pd.concat([oa_cords_df, pd.DataFrame(stops_dicts), pd.DataFrame(bus_stops_dicts)], axis=1)
     print(nearby_public_transport_stops_df)
     aws_utils.upload_data_from_df(conn, nearby_public_transport_stops_df ,"nearby_stops", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_public_transport_stops_df.columns) - 1)], "OA")
 
     nearby_amenity_non_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_non_transport_index_file, process_func=amenity_data_extractor)
-    nearby_amenity_non_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_non_transport).fillna(0).astype(int)], axis=1)
+    nearby_amenity_non_transport_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity_non_transport).fillna(0).astype(int)], axis=1)
     print(nearby_amenity_non_transport_df)
     aws_utils.upload_data_from_df(conn, nearby_amenity_non_transport_df ,"nearby_amenity_non_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_non_transport_df.columns) - 1)], "OA")
 
     nearby_amenity_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_transport_index_file, process_func=amenity_data_extractor)
-    nearby_amenity_transport_df = pd.concat([oa_id_df, pd.DataFrame(nearby_amenity_transport).fillna(0).astype(int)], axis=1)
+    nearby_amenity_transport_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity_transport).fillna(0).astype(int)], axis=1)
     print(nearby_amenity_transport_df)
     aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 1)], "OA")
 
