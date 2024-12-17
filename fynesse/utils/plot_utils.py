@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.colors as mcolors
 from . import pandas_utils
 import math
+from scipy.spatial.distance import pdist, squareform
 
 
 def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylabel=None):
@@ -166,7 +167,7 @@ def plot_feature_on_map_relative_to_median(df, feature_name):
 # ----- ===== -----
 
 
-def plot_values_increasing(features_df, plot_size=(9, 9), title="Sorted Feature Values"):
+def plot_values_increasing(features_df, plot_size=(6, 6), title="Sorted Feature Values"):
     plt.figure(figsize=plot_size)
 
     for column in features_df.columns:
@@ -268,4 +269,43 @@ def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6
     for j in range(i + 1, len(axes)):
         axes[j].set_visible(False)
 
+    plt.show()
+
+
+def plot_oa_clusters(df, plot_size=(5, 5)):
+    plt.figure(figsize=plot_size)
+    for cluster in df["cluster"].unique():
+        cluster_data = df[df["cluster"] == cluster]
+        plt.scatter(
+            cluster_data["long"], cluster_data["lat"],
+            label=f"Cluster {cluster}", s=5, alpha=0.7
+        )
+            
+    plt.xlabel("Latitude")
+    plt.ylabel("Longitude")
+    plt.title("Clustered Locations")
+    plt.legend()
+    plt.show()
+
+
+def plot_difference_matrix_for_features(df, plot_size=(10, 10)):
+    # Transpose the DataFrame to compute pairwise distances between features
+    features_matrix = df.T
+
+    # Compute the distance matrix using Euclidean distance
+    distance_matrix = squareform(pdist(features_matrix, metric="euclidean"))
+
+    # Feature names
+    feature_names = df.columns
+
+    # Plot the distance matrix as a heatmap
+    plt.figure(figsize=plot_size)
+    plt.imshow(distance_matrix, interpolation="nearest", cmap="viridis")
+    plt.colorbar(label="Euclidean Distance")
+
+    plt.title("Feature Distance Matrix")
+    plt.xticks(ticks=np.arange(len(feature_names)), labels=feature_names, rotation=90)
+    plt.yticks(ticks=np.arange(len(feature_names)), labels=feature_names)
+
+    plt.tight_layout()
     plt.show()
