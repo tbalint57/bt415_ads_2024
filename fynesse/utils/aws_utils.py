@@ -50,7 +50,7 @@ def upload_csv_to_table(conn, table_name, file_name):
     conn.commit()
 
 
-def upload_data_from_file(conn, file, table_name, type, key):
+def upload_data_from_file(conn, file, table_name, type, key, indexed_columns=[("lat", "long")]):
     print(f"Uploading `{file}` to table `{table_name}`...")
     file_df = pandas_utils.load_csv(file)
     
@@ -59,6 +59,7 @@ def upload_data_from_file(conn, file, table_name, type, key):
     upload_csv_to_table(conn, table_name, file)
 
     delete_invalid_entries(conn, table_name, {"OA": ["OA"]}) # Brute force solution 
+    add_index_to_table(conn, table_name, indexed_columns)
 
     print(f"Uploaded `{file}` to table `{table_name}` successfully!")
 
@@ -122,10 +123,26 @@ def query_AWS_load_tables_with_join(conn, table_names, joining_field="OA", colum
     return df
 
 
-def upload_data_from_df(conn, df, table_name, types, key):
+def upload_data_from_df(conn, df, table_name, types, key, indexed_columns=[("lat", "long")]):
 
     setup_table(conn, table_name, df.columns, types)
     add_key_to_table(conn, table_name, key)
 
     df.to_csv("upload_temp.csv", index=False)
     upload_csv_to_table(conn, table_name, "upload_temp.csv")
+    add_index_to_table(conn, table_name, indexed_columns)
+
+
+def add_index_to_table(conn, table_name, indexed_columns):
+    cursor = conn.cursor()
+
+    for idx, columns in enumerate(indexed_columns, start=1):
+        index_name = f"idx_{'_'.join(columns)}"
+        columns_str = ", ".join([f"`{col}`" for col in columns])
+
+        sql_command = f"CREATE INDEX `{index_name}` ON `{table_name}` ({columns_str});"
+        cursor.execute(sql_command)
+        print(f"Added index `{index_name}` on columns {columns_str} in table `{table_name}`.")
+
+    conn.commit()
+    cursor.close()
