@@ -191,7 +191,8 @@ def visualise_census_by_distance_from_median_on_map(conn, code, size=5):
 def visualise_census_data_locally(conn, locations, code, size=3):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    for (lat, lon), name in locations:
+    for location, name in locations.items():
+        lat, lon = location
         print(name)
         plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
