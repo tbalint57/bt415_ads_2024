@@ -182,8 +182,8 @@ def plot_values_increasing(features_df, plot_size=(6, 6), title="Sorted Feature 
 
 
 def plot_values_distribution(features_df, base_figsize=(6, 6), title="Values by Frequency"):
-    rows = int(math.ceil(len(features_df.columns[2:]) / 3))
-    cols = min(3, len(features_df.columns[2:]))
+    rows = int(math.ceil(len(features_df.columns) / 3))
+    cols = min(3, len(features_df.columns))
     
     plot_size_x = base_figsize[0] * cols
     plot_size_y = base_figsize[1] * rows
