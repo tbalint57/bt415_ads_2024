@@ -78,19 +78,46 @@ def delete_invalid_entries(conn, table_name, invalid_values):
     print(f"Deleted invalid rows from `{table_name}` where: {where_clause}.")
 
 
-def query_AWS_load_table(conn, table_name, columns=None):
-    if columns is None:
+def query_AWS_load_table(conn, table_name, columns=None, limit=None):
+    if columns is None and limit is None:
         query_str = f"SELECT * FROM {table_name};"
-    else:
+    elif limit is None:
         cols = ", ".join([f"`{column}`" for column in columns])
         query_str = f"SELECT {cols} FROM {table_name};"
-    
+    else:
+        cols = ", ".join([f"`{column}`" for column in columns])
+        query_str = f"SELECT {cols} FROM {table_name} LIMIT {limit};"
+
     cur = conn.cursor()
     
     cur.execute(query_str)
     data = cur.fetchall()
     colnames = [desc[0] for desc in cur.description]
     
+    df = pd.DataFrame(data, columns=colnames)
+    return df
+
+
+def query_AWS_load_tables_with_join(conn, table_names, joining_field="OA", column_names=None, limit=None):
+    join_clause = f" `{table_names[0]}` "
+    for table in table_names[1:]:
+        join_clause += f"INNER JOIN `{table}` ON `{table_names[0]}`.`{joining_field}` = `{table}`.`{joining_field}` "
+
+    if column_names:
+        cols = ", ".join([f"`{table}`.`{column}`" for table in table_names for column in column_names])
+    else:
+        cols = "*"
+
+    limit_clause = f"LIMIT {limit}" if limit else ""
+
+    query_str = f"SELECT {cols} FROM {join_clause} {limit_clause};"
+
+    cur = conn.cursor()
+    
+    cur.execute(query_str)
+    data = cur.fetchall()
+    colnames = [desc[0] for desc in cur.description]
+
     df = pd.DataFrame(data, columns=colnames)
     return df
 

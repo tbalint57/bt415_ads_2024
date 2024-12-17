@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from .utils import aws_utils, pandas_utils, plot_utils
+from scipy.spatial.distance import pdist, squareform
 
 
 from . import access
@@ -163,58 +164,139 @@ def get_building_addresses_in_region(latitude, longitude, distance_km=1):
 # ----- ===== -----
 
 
+def sample_census_data(conn, code, limit=3):
+    columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns, limit=3)
+    return census_df
+
+
 # Functions to visualise the census data
 def visualise_census_data_values(conn, code):
     columns = access.get_census_data_column_names()[code]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_increasing(transport_df, title="Value Set of Trensport Data")
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data")
 
 
 def visualise_census_data_distribution(conn, code):
     columns = access.get_census_data_column_names()[code]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_distribution(transport_df)
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    plot_utils.plot_values_distribution(census_df)
 
 
 def visualise_census_by_distance_from_median_on_map(conn, code):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_on_map_relative_to_median(transport_df)
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df)
 
 
 def visualise_census_data_locally(conn, code, lat, lon):
     columns = ["lat", "long"] + access.get_census_data_column_names()[code]
-    transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_values_on_map_relative_to_median(transport_df, loc=(lat, lon))
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon))
 
 
 # Functions to visualise the osm data
 def visualise_osm_data_values(conn, columns=None):
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_increasing(transport_df, title="Value Set of Trensport Data")
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data")
 
 
 def visualise_osm_data_distribution(conn, columns=None):
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_distribution(transport_df)
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_distribution(census_df)
 
 
 def visualise_osm_by_distance_from_median_on_map(conn, columns=None):
     if columns is not None:
         columns = ["lat", "long"] + access.get_census_data_column_names()
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(transport_df)
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df)
 
 
 def visualise_osm_data_locally(conn, lat, lon, columns=None):
     if columns is not None:
         columns = ["lat", "long"] + access.get_census_data_column_names()
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(transport_df, loc=(lat, lon))
-
-# Functions to visualise the osm data
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon))
 
 
+
+def cluster_oas(df, n_clusters):
+    """
+    Cluster locations based on features using KMeans
+    """
+    feature_columns = df.columns.difference(["OA", "lat", "long"])
+    X = df[feature_columns]
+
+    kmeans = KMeans(n_clusters=n_clusters)
+
+    clustered_df = df.copy()
+    clustered_df["cluster"] = kmeans.fit_predict(X)
+
+    return clustered_df
+
+
+def plot_oa_clusters(df):
+    """
+    Plots locations based on their clusters.
+    """
+    
+    plt.figure(figsize=(10, 8))
+    for cluster in df["cluster"].unique():
+        cluster_data = df[df["cluster"] == cluster]
+        plt.scatter(
+            cluster_data["long"], cluster_data["lat"],
+            label=f"Cluster {cluster}", s=5, alpha=0.7
+        )
+            
+    plt.xlabel("Latitude")
+    plt.ylabel("Longitude")
+    plt.title("Clustered Locations")
+    plt.legend()
+    plt.show()
+    
+
+def create_clusters_on_data(conn, tables, fields, n_clusters=5):
+    fields[0] = ["OA", "lat", "long"] + fields[0]
+
+    if len(tables) > 1:
+        df = aws_utils.query_AWS_load_tables_with_join(conn, tables, joining_field="OA", column_names=fields)
+    else:
+        df = aws_utils.query_AWS_load_table(conn, tables[0], fields[0])
+
+    clustered_df = cluster_oas(df, n_clusters)
+    plot_oa_clusters(clustered_df)
+
+
+def plot_difference_matrix_for_features(df):
+    features_df = df.drop(columns=["OA", "lat", "long"])
+
+    # Transpose the DataFrame to compute pairwise distances between features
+    features_matrix = features_df.T
+
+    # Compute the distance matrix using Euclidean distance
+    distance_matrix = squareform(pdist(features_matrix, metric="euclidean"))
+
+    # Feature names
+    feature_names = features_df.columns
+
+    # Plot the distance matrix as a heatmap
+    plt.figure(figsize=(8, 6))
+    plt.imshow(distance_matrix, interpolation="nearest", cmap="viridis")
+    plt.colorbar(label="Euclidean Distance")
+
+    plt.title("Feature Distance Matrix")
+    plt.xticks(ticks=np.arange(len(feature_names)), labels=feature_names, rotation=90)
+    plt.yticks(ticks=np.arange(len(feature_names)), labels=feature_names)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def visualise_census_data_similarity(conn, code):
+    columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    plot_difference_matrix_for_features(census_df)
 
 
 # ----- ===== -----
