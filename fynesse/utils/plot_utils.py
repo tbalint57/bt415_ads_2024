@@ -211,14 +211,14 @@ def plot_values_distribution(features_df, base_figsize=(6, 6), title="Values by 
     plt.show()
     
 
-def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6, 6)):
+def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6, 6), max_col_size=3, labels_on=True):
     filtered_df = features_df
     if loc is not None:
         lat, lon = loc
         filtered_df = pandas_utils.filter_by_cords(features_df, lat, lon, size_km=10)
     
     rows = int(math.ceil(len(features_df.columns[2:]) / 3))
-    cols = min(3, len(features_df.columns[2:]))
+    cols = min(max_col_size, len(features_df.columns[2:]))
     
     plot_size_x = base_figsize[0] * cols
     plot_size_y = base_figsize[1] * rows
@@ -251,15 +251,25 @@ def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6
 
             # Associate colorbar explicitly with the subplot
             cbar = fig.colorbar(scatter, ax=axes[i], orientation="vertical")
-            cbar.set_label(f"Deviation from Median ({feature_name})")
+            if labels_on:
+                cbar.set_label(f"Deviation from Median ({feature_name})")
             cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
-            cbar.set_ticklabels([
-                f"{feature_min:.2f} (Min)", 
-                f"{0.5 * (feature_median + feature_min):.2f}",
-                f"{feature_median:.2f} (Median)", 
-                f"{0.5 * (feature_median + feature_max):.2f}",
-                f"{feature_max:.2f} (Max)"
-            ])
+            if labels_on:
+                cbar.set_ticklabels([
+                    f"{feature_min:.2f} (Min)", 
+                    f"{0.5 * (feature_median + feature_min):.2f}",
+                    f"{feature_median:.2f} (Median)", 
+                    f"{0.5 * (feature_median + feature_max):.2f}",
+                    f"{feature_max:.2f} (Max)"
+                ])
+            else:
+                cbar.set_ticklabels([
+                    f"{feature_min:.2f}", 
+                    f"{0.5 * (feature_median + feature_min):.2f}",
+                    f"{feature_median:.2f}", 
+                    f"{0.5 * (feature_median + feature_max):.2f}",
+                    f"{feature_max:.2f}"
+                ])
 
             axes[i].set_title(feature_name)
             axes[i].set_xlabel("Longitude")
