@@ -288,7 +288,7 @@ def plot_oa_clusters(df, plot_size=(5, 5)):
         cluster_data = df[df["cluster"] == cluster]
         plt.scatter(
             cluster_data["long"], cluster_data["lat"],
-            label=f"Cluster {cluster}", s=5, alpha=0.7
+            label=f"Cluster {cluster}", s=1, alpha=0.7
         )
             
     plt.xlabel("Latitude")

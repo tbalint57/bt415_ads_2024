@@ -236,25 +236,13 @@ def cluster_oas(df, n_clusters):
     clustered_df["cluster"] = kmeans.fit_predict(X)
 
     return clustered_df
-    
-
-def create_clusters_on_data(conn, tables, fields, n_clusters=5):
-    fields[0] = ["OA", "lat", "long"] + fields[0]
-
-    if len(tables) > 1:
-        df = aws_utils.query_AWS_load_tables_with_join(conn, tables, joining_field="OA", column_names=fields)
-    else:
-        df = aws_utils.query_AWS_load_table(conn, tables[0], fields[0])
-
-    clustered_df = cluster_oas(df, n_clusters)
-    plot_utils.plot_oa_clusters(clustered_df)
 
 
 def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
-    tables = ["normalised_census_data"]
-    fields = [access.get_census_data_column_names()[code]]
+    columns = ["lat", "long"] + access.get_census_data_column_names()[code]
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
 
-    cluster_df = create_clusters_on_data(conn, tables, fields, n_clusters=n_clusters)
+    cluster_df = cluster_oas(census_df, n_clusters=n_clusters)
     plot_utils.plot_oa_clusters(cluster_df, plot_size=(size, size))
 
 
