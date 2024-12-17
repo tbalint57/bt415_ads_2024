@@ -190,26 +190,26 @@ def visualise_census_data_locally(conn, code, lat, lon):
 
 # Functions to visualise the osm data
 def visualise_osm_data_values(conn, columns=None):
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
     plot_utils.plot_values_increasing(transport_df, title="Value Set of Trensport Data")
 
 
 def visualise_osm_data_distribution(conn, columns=None):
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
     plot_utils.plot_values_distribution(transport_df)
 
 
 def visualise_osm_by_distance_from_median_on_map(conn, columns=None):
     if columns is not None:
         columns = ["lat", "long"] + access.get_census_data_column_names()
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
     plot_utils.plot_values_on_map_relative_to_median(transport_df)
 
 
 def visualise_osm_data_locally(conn, lat, lon, columns=None):
     if columns is not None:
         columns = ["lat", "long"] + access.get_census_data_column_names()
-    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_transport", columns)
+    transport_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
     plot_utils.plot_values_on_map_relative_to_median(transport_df, loc=(lat, lon))
 
 # Functions to visualise the osm data

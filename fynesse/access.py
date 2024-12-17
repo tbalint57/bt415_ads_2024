@@ -559,17 +559,12 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     stops_dicts = [transport_stops_record[0] for transport_stops_record in nearby_public_transport_stops]
     bus_stops_dicts = [transport_stops_record[1] for transport_stops_record in nearby_public_transport_stops]
     nearby_public_transport_stops_df = pd.concat([oa_cords_df, pd.DataFrame(stops_dicts), pd.DataFrame(bus_stops_dicts)], axis=1)
-    print(nearby_public_transport_stops_df)
-    aws_utils.upload_data_from_df(conn, nearby_public_transport_stops_df ,"nearby_stops", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_public_transport_stops_df.columns) - 1)], "OA")
+    aws_utils.upload_data_from_df(conn, nearby_public_transport_stops_df ,"nearby_stops", ["varchar(16)", "float(16)", "float(16)"] + ["int(16)" for _ in range(len(nearby_public_transport_stops_df.columns) - 3)], "OA")
 
     nearby_amenity_non_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_non_transport_index_file, process_func=amenity_data_extractor)
     nearby_amenity_non_transport_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity_non_transport).fillna(0).astype(int)], axis=1)
-    print(nearby_amenity_non_transport_df)
-    aws_utils.upload_data_from_df(conn, nearby_amenity_non_transport_df ,"nearby_amenity_non_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_non_transport_df.columns) - 1)], "OA")
+    aws_utils.upload_data_from_df(conn, nearby_amenity_non_transport_df ,"nearby_amenity_non_transport", ["varchar(16)", "float(16)", "float(16)"] + ["int(16)" for _ in range(len(nearby_amenity_non_transport_df.columns) - 3)], "OA")
 
     nearby_amenity_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_transport_index_file, process_func=amenity_data_extractor)
     nearby_amenity_transport_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity_transport).fillna(0).astype(int)], axis=1)
-    print(nearby_amenity_transport_df)
-    aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 1)], "OA")
-
-
+    aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)", "float(16)", "float(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 3)], "OA")
