@@ -250,6 +250,14 @@ def create_clusters_on_data(conn, tables, fields, n_clusters=5):
     plot_utils.plot_oa_clusters(clustered_df)
 
 
+def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
+    tables = ["normalised_census_data"]
+    fields = [access.get_census_data_column_names()[code]]
+
+    cluster_df = create_clusters_on_data(conn, tables, fields, n_clusters=n_clusters)
+    plot_utils.plot_oa_clusters(cluster_df, plot_size=(size, size))
+
+
 def visualise_census_data_similarity(conn, code, size=10):
     columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
