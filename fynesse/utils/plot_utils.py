@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.colors as mcolors
 from . import pandas_utils
 import math
-from scipy.spatial.distance import pdist, squareform
+from scipy.spatial.distance import pdist, cdist, squareform
 
 
 def plot_arrays(arrays, labels=None, colours=None, title=None, xlabel=None, ylabel=None):
@@ -327,6 +327,27 @@ def plot_difference_matrix_for_features(df, plot_size=(10, 10)):
     plt.title("Feature Distance Matrix")
     plt.xticks(ticks=np.arange(len(feature_names)), labels=feature_names, rotation=90)
     plt.yticks(ticks=np.arange(len(feature_names)), labels=feature_names)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_difference_matrix_between_features(df1, df2, plot_size=(10, 10)):
+    # Compute the pairwise distance matrix between features of df1 and df2
+    distance_matrix = cdist(df1.T, df2.T, metric="euclidean")
+
+    # Feature names
+    feature_names_df1 = df1.columns
+    feature_names_df2 = df2.columns
+
+    # Plot the distance matrix as a heatmap
+    plt.figure(figsize=plot_size)
+    plt.imshow(distance_matrix, interpolation="nearest", cmap="viridis")
+    plt.colorbar(label="Euclidean Distance")
+
+    plt.title("Feature Difference Matrix Between Two Sets")
+    plt.xticks(ticks=np.arange(len(feature_names_df2)), labels=feature_names_df2, rotation=90)
+    plt.yticks(ticks=np.arange(len(feature_names_df1)), labels=feature_names_df1)
 
     plt.tight_layout()
     plt.show()

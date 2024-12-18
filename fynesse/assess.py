@@ -224,6 +224,19 @@ def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
     plot_utils.plot_oa_clusters(cluster_df, plot_size=(size, size), loc=london_loc, size_km=100)
 
 
+def visualise_census_tables_by_difference_matrix(conn, code_a, code_b, size=10):
+    columns_a = access.get_census_data_column_names()[code_a]
+    columns_b = access.get_census_data_column_names()[code_b]
+
+    columns =  columns_a + columns_b
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+
+    census_df_a = census_df[columns_a]
+    census_df_b = census_df[columns_b]
+
+    plot_utils.plot_difference_matrix_between_features(census_df_a, census_df_b, plot_size=(size, size))
+
+
 def visualise_census_data_similarity(conn, code, size=10):
     columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
