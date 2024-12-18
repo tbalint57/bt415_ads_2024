@@ -282,17 +282,28 @@ def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6
     plt.show()
 
 
-def plot_oa_clusters(df, plot_size=(5, 5)):
+def plot_oa_clusters(cluster_df, plot_size=(5, 5), loc=None, size_km=10):
+    if loc is not None:
+        lat, lon = loc
+        df = pandas_utils.filter_by_cords(cluster_df, lat, lon, size_km=size_km)
+    else:
+        df = cluster_df
+
     plt.figure(figsize=plot_size)
+    
+    unique_clusters = sorted(df["cluster"].unique())
+    cmap = plt.get_cmap('tab10')
+    color_map = {cluster: cmap(i % 10) for i, cluster in enumerate(unique_clusters)}
+
     for cluster in df["cluster"].unique():
         cluster_data = df[df["cluster"] == cluster]
         plt.scatter(
             cluster_data["long"], cluster_data["lat"],
-            label=f"Cluster {cluster}", s=1, alpha=0.7
+            label=f"Cluster {cluster}", s=1, alpha=0.7, c=color_map[cluster]
         )
-            
-    plt.xlabel("Latitude")
-    plt.ylabel("Longitude")
+    
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
     plt.title("Clustered Locations")
     plt.legend()
     plt.show()

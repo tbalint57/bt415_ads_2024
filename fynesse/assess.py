@@ -245,6 +245,9 @@ def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
     cluster_df = cluster_oas(census_df, n_clusters=n_clusters)
     plot_utils.plot_oa_clusters(cluster_df, plot_size=(size, size))
 
+    london_loc = (51.513257, -0.098277)
+    plot_utils.plot_oa_clusters(cluster_df, plot_size=(size, size), loc=london_loc, size_km=100)
+
 
 def visualise_census_data_similarity(conn, code, size=10):
     columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
