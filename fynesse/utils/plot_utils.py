@@ -351,3 +351,31 @@ def plot_difference_matrix_between_features(df1, df2, plot_size=(10, 10)):
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_correlation_heatmap_between_features(df1, df2, plot_size=(10, 10)):
+    correlation_matrix = np.corrcoef(df1.T, df2.T)[:df1.shape[1], df1.shape[1]:]
+
+    # Feature names
+    feature_names_df1 = df1.columns
+    feature_names_df2 = df2.columns
+
+    # Define a custom colormap: light grey in the middle, blue for low, and red for high values
+    colors = [(0, 0, 1), (0.85, 0.85, 0.85), (1, 0, 0)]  # Blue, Grey, Red
+    n_bins = 100  # Number of bins
+    cmap_name = "blue_grey_red"
+    
+
+    # Plot the distance matrix as a heatmap
+    plt.figure(figsize=plot_size)
+    plt.imshow(correlation_matrix, interpolation="nearest", cmap=mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins), vmin=-1, vmax=1)
+    plt.colorbar(label="Euclidean Distance")
+
+    plt.title("Feature Difference Matrix Between Two Sets")
+    plt.xticks(ticks=np.arange(len(feature_names_df2)), labels=feature_names_df2, rotation=90)
+    plt.yticks(ticks=np.arange(len(feature_names_df1)), labels=feature_names_df1)
+
+    plt.tight_layout()
+    plt.show()
+
+    
