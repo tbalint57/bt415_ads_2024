@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import matplotlib.colors as mcolors
+from matplotlib.cm import get_cmap
 from . import pandas_utils
 import math
 from scipy.spatial.distance import pdist, cdist, squareform
@@ -345,7 +346,7 @@ def plot_difference_matrix_between_features(df1, df2, plot_size=(10, 10)):
     plt.imshow(distance_matrix, interpolation="nearest", cmap="viridis")
     plt.colorbar(label="Euclidean Distance")
 
-    plt.title("Feature Difference Matrix Between Two Sets")
+    plt.title("Feature Difference Matrix")
     plt.xticks(ticks=np.arange(len(feature_names_df2)), labels=feature_names_df2, rotation=90)
     plt.yticks(ticks=np.arange(len(feature_names_df1)), labels=feature_names_df1)
 
@@ -364,18 +365,83 @@ def plot_correlation_heatmap_between_features(df1, df2, plot_size=(10, 10)):
     colors = [(0, 0, 1), (0.85, 0.85, 0.85), (1, 0, 0)]  # Blue, Grey, Red
     n_bins = 100  # Number of bins
     cmap_name = "blue_grey_red"
-    
 
-    # Plot the distance matrix as a heatmap
+    # Plot the correlation matrix as a heatmap
     plt.figure(figsize=plot_size)
     plt.imshow(correlation_matrix, interpolation="nearest", cmap=mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins), vmin=-1, vmax=1)
-    plt.colorbar(label="Euclidean Distance")
+    plt.colorbar(label="Pearson Correlation")
+    
+    # Add correlation values as text on each tile
+    for i in range(correlation_matrix.shape[0]):
+        for j in range(correlation_matrix.shape[1]):
+            plt.text(
+                j, i, f"{correlation_matrix[i, j]:.2f}",
+                ha="center", va="center", color="black"
+            )
 
-    plt.title("Feature Difference Matrix Between Two Sets")
+    plt.title("Pearson Correlation Matrix")
     plt.xticks(ticks=np.arange(len(feature_names_df2)), labels=feature_names_df2, rotation=90)
     plt.yticks(ticks=np.arange(len(feature_names_df1)), labels=feature_names_df1)
 
     plt.tight_layout()
     plt.show()
-
     
+
+def plot_hexbin_joint_distribution(df1, df2, plot_size=(10, 10)):
+    x = df1.iloc[:, 0]
+    y = df2.iloc[:, 0]
+
+    colors = [(1, 1, 1), (0, 0, 0)]  # Blue, Grey, Red
+    n_bins = 100  # Number of bins
+    cmap_name = "balck_and_white"
+
+    # Plot hexbin
+    plt.figure(figsize=plot_size)
+    hb = plt.hexbin(x, y, gridsize=50, cmap=mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins))
+    cb = plt.colorbar(hb, label='Counts')
+
+    plt.title("Hexbin Joint Distribution")
+    plt.xlabel(df1.columns[0])
+    plt.ylabel(df2.columns[0])
+    plt.tight_layout()
+    plt.show()
+    
+
+def plot_fitted_lines(df1, df2, plot_size=(10, 10)):
+    num_of_plots = len(df1.columns)
+    
+    rows = math.ceil(num_of_plots / 5)
+    cols = min(5, num_of_plots)
+
+    fig, axes = plt.subplots(rows, cols, figsize=plot_size, constrained_layout=True)
+
+    # Flatten the axes array for easier indexing
+    if num_of_plots > 1:
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+
+    plot_index = 0  # To track the correct subplot for each plot
+
+    for col1 in df1.columns:
+        for col2 in df2.columns:
+            x = df1[col1]
+            y = df2[col2]
+
+            a, b = np.polyfit(x, y, 1)  # Linear fit
+            axes[plot_index].plot(x, a * x + b, label=f"{col2}: {a:.2f}")
+
+        # Labeling and titles
+        axes[plot_index].set_xlabel(col1)
+        axes[plot_index].set_ylabel(col2)
+        axes[plot_index].set_title(f"{col1} vs {col2}")
+        axes[plot_index].legend()
+
+        plot_index += 1
+
+    # Remove any unused subplots
+    for i in range(plot_index, len(axes)):
+        fig.delaxes(axes[i])
+
+    plt.tight_layout()
+    plt.show()

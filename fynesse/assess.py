@@ -247,13 +247,28 @@ def visualise_census_tables_by_correlation(conn, code_a, code_b, size=10):
     census_df_a = census_df[columns_a]
     census_df_b = census_df[columns_b]
 
-    plot_utils.plot_correlation_heatmap_between_features(census_df_a, census_df_b, plot_size=(size, size))
+    plot_utils.plot_correlation_heatmap_between_features(census_df_a, census_df_b, plot_size=(size, size)) 
 
 
-def visualise_census_data_similarity(conn, code, size=10):
-    columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
+def visualise_census_joint_distribution(conn, column_a, column_b, size=10):
+    columns =  [column_a, column_b]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_difference_matrix_for_features(census_df, base_figsize=(size, size))  
+
+    census_df_a = census_df[[column_a]]
+    census_df_b = census_df[[column_b]]
+
+    plot_utils.plot_hexbin_joint_distribution(census_df_a, census_df_b, plot_size=(size, size)) 
+
+
+def visualise_census_joint_distribution_for_feature_table(conn, column_a, code, size=10):
+    columns_b = access.get_census_data_column_names()[code]
+    columns =  [column_a] + columns_b
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+
+    census_df_a = census_df[[column_a]]
+    census_df_b = census_df[columns_b]
+
+    plot_utils.plot_fitted_lines(census_df_a, census_df_b, plot_size=(size, size)) 
 
 
 # Functions to visualise the osm data
