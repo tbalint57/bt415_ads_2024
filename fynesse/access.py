@@ -370,7 +370,7 @@ def upload_census_data(conn,
     print("\nCensus Data Successfully Uploaded!")
 
 
-def get_census_data_column_names():
+def get_census_data_column_names(include_code=True):
     column_names = {
         "TS001": ["id", "household", "communal"],
         "TS002": ["id", "never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
@@ -406,11 +406,61 @@ def get_census_data_column_names():
 
     codes = column_names.keys()
 
-    for code in codes:
-        column_names[code] = [code + "_" + column_name for column_name in column_names[code][1:]]
+    if include_code:
+        for code in codes:
+            column_names[code] = [code + "_" + column_name for column_name in column_names[code][1:]]
+    
+    else:
+        for code in codes:
+            column_names[code] = column_names[code][1:]
 
     return column_names
 
+
+def get_census_data_table_descriptions():
+    titles = {
+        "TS001": "Number of residents in households and communal establishments",
+        "TS002": "Legal partnership status",
+        "TS003": "Household composition",
+        "TS004": "Country of birth",
+        "TS007": "Age groups",
+        "TS011": "Households by deprivation dimensions",
+        "TS016": "Length of residence",
+        "TS017": "Number of people in one household",
+        "TS018": "Age of arrival in the UK",
+        "TS019": "Migrant indicator",
+        "TS021": "Ethnic group",
+        "TS025": "Household language",
+        "TS029": "Proficiency in English",
+        "TS030": "Religion",
+        "TS037": "General health",
+        "TS038": "Disability",
+        "TS039": "Provision of unpaid care in hours",
+        "TS040": "Number of disabled people in the household",
+        "TS058": "Distance travelled to work",
+        "TS059": "Hours worked",
+        "TS060": "Industry",
+        "TS061": "Method used to travel to work",
+        "TS062": "NS-SeC (National Statistics Socio-economic Classification)",
+        "TS063": "Occupation",
+        "TS065": "Employment history",
+        "TS066": "Economic activity status",
+        "TS067": "Highest level of qualification",
+        "TS068": "Schoolchildren and full-time students",
+        "TS077": "Sexual orientation",
+        "TS078": "Gender identity"
+    }
+
+
+    attributes = get_census_data_column_names(include_code=False)
+
+    
+    table = [
+        {"Code": code, "Title": titles[code], "Attributes": ", ".join(attrs)}
+        for code, attrs in attributes.items()
+    ]
+
+    return pd.DataFrame(table)
 
 #OSM
 

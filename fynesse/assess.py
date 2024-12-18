@@ -197,31 +197,6 @@ def visualise_census_data_locally(conn, locations, code, size=3):
         plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
 
-# Functions to visualise the osm data
-def visualise_osm_data_values(conn, columns=None, size=5):
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data", plot_size=(size, size))
-
-
-def visualise_osm_data_distribution(conn, columns=None, size=5):
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_distribution(census_df, base_figsize=(size, size))
-
-
-def visualise_osm_by_distance_from_median_on_map(conn, columns=None, size=5):
-    if columns is not None:
-        columns = ["lat", "long"] + access.get_census_data_column_names()
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size, size))
-
-
-def visualise_osm_data_locally(conn, lat, lon, columns=None, size=5):
-    if columns is not None:
-        columns = ["lat", "long"] + access.get_census_data_column_names()
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size))
-
-
 
 def cluster_oas(df, n_clusters):
     """
@@ -252,7 +227,32 @@ def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
 def visualise_census_data_similarity(conn, code, size=10):
     columns = ["OA", "lat", "long"] + access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    plot_utils.plot_difference_matrix_for_features(census_df, base_figsize=(size, size))
+    plot_utils.plot_difference_matrix_for_features(census_df, base_figsize=(size, size))  
+
+
+# Functions to visualise the osm data
+def visualise_osm_data_values(conn, columns=None, size=5):
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data", plot_size=(size, size))
+
+
+def visualise_osm_data_distribution(conn, columns=None, size=5):
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_distribution(census_df, base_figsize=(size, size))
+
+
+def visualise_osm_by_distance_from_median_on_map(conn, columns=None, size=5):
+    if columns is not None:
+        columns = ["lat", "long"] + access.get_census_data_column_names()
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size, size))
+
+
+def visualise_osm_data_locally(conn, lat, lon, columns=None, size=5):
+    if columns is not None:
+        columns = ["lat", "long"] + access.get_census_data_column_names()
+    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
+    plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size))
 
 
 # ----- ===== -----
