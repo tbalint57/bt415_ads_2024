@@ -390,7 +390,7 @@ def visualise_osm_by_distance_from_median_on_map(conn, type, size=3):
 
 
 def visualise_osm_data_locally(conn, locations, type, size=3):
-    census_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
+    census_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["OA"])
     for location, name in locations.items():
         lat, lon = location
         print(name)
@@ -428,4 +428,4 @@ def visualise_osm_feture_against_density(conn, type, feature, size=10):
     columns = ["lat", "long", feature, "density"]
     census_df = aws_utils.query_AWS_load_table(conn, type, columns).drop(columns=["OA", "lat", "long"])
 
-    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size/2, size/2))
+    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size/2, size/2), labels_on=False)
