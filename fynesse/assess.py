@@ -405,9 +405,17 @@ def calculate_osm_correlation(conn, type, code, save_file=None):
     tables = access.get_census_data_column_names()
 
     correlation_values = {attribute: [] for attribute in tables[code]}
-    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code])
 
-    feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["OA", "lat", "long"])
+    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code] + ["OA"])
+    feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
+
+    goal_columns = tables[code]
+    feature_columns = feature_df.columns.drop("OA")
+
+    joined_df = goal_df.merge(feature_df, how="inner", on=["OA"])
+
+    goal_df = joined_df[goal_columns]
+    feature_df = joined_df[feature_columns]
 
     correlation_matrix = np.corrcoef(feature_df.T, goal_df.T)[:feature_df.shape[1], feature_df.shape[1]:]
 
