@@ -126,7 +126,11 @@ def train_regularised_model(input_df, output_df, start_alpha=0.001, start_l1_wei
 
 
 def get_model(conn, input_table_name, input_columns, output_table_name, output_column, max_steps=5):
-    input_df = aws_utils.query_AWS_load_table(conn, input_table_name, ["OA"] + input_columns)
+    if input_columns is not None:
+        input_df = aws_utils.query_AWS_load_table(conn, input_table_name, ["OA"] + input_columns)
+    else:
+        input_df = aws_utils.query_AWS_load_table(conn, input_table_name)
+
     output_df = aws_utils.query_AWS_load_table(conn, output_table_name, ["OA"] + output_column)
 
     joined_df = input_df.merge(output_df, how="inner", on=["OA"])
