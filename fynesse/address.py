@@ -125,6 +125,17 @@ def train_regularised_model(input_df, output_df, start_alpha=0.001, start_l1_wei
     return model
 
 
+def get_model(conn, input_table_name, input_columns, output_table_name, output_column, max_steps=5):
+    input_df = aws_utils.query_AWS_load_table(conn, input_table_name, ["OA"] + input_columns)
+    output_df = aws_utils.query_AWS_load_table(conn, output_table_name, ["OA"] + output_column)
+
+    joined_df = input_df.merge(output_df, how="inner", on=["OA"])
+
+    input_df = joined_df[input_columns]
+    output_df = joined_df[output_column]
+
+    return train_regularised_model(input_df, output_df, max_steps=max_steps)
+
 def transport_model_1(conn, max_steps=5):
     tables = access.get_census_data_column_names()
     columns = ["density"] + tables["TS007"] + tables["TS038"] + tables["TS058"] + tables["TS061"]
