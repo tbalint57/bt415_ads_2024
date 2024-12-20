@@ -490,6 +490,22 @@ def visualise_osm_census_table_by_correlation(conn, type, code, size=16):
     plot_utils.plot_correlation_heatmap_between_features(goal_df, feature_df, plot_size=(size, size / 2)) 
 
 
+def visualise_osm_census_table_by_correlation_for_culomns(conn, type, columns, size=16):
+
+    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns + ["OA"])
+    feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
+
+    goal_columns = columns
+    feature_columns = feature_df.columns.drop("OA")
+
+    joined_df = goal_df.merge(feature_df, how="inner", on=["OA"])
+
+    goal_df = joined_df[goal_columns]
+    feature_df = joined_df[feature_columns]
+
+    plot_utils.plot_correlation_heatmap_between_features(goal_df, feature_df, plot_size=(size, size / 2)) 
+
+
 def visualise_osm_feture_against_density(conn, type, feature, size=10):
     columns = ["lat", "long", feature, "density"]
     census_df = aws_utils.query_AWS_load_table(conn, type, columns).drop(columns=["OA", "lat", "long"])
