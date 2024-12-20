@@ -225,7 +225,7 @@ def plot_values_on_map_relative_to_median(features_df, loc=None, base_figsize=(6
     plot_size_y = base_figsize[1] * rows
     fig, axes = plt.subplots(rows, cols, figsize=(plot_size_x, plot_size_y), constrained_layout=True)
 
-    if rows > 1:
+    if rows * cols:
         axes = axes.flatten()
     else:
         axes = [axes]

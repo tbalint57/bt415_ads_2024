@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from .utils import aws_utils, pandas_utils, plot_utils
+import math
+import json
 
 
 from . import access
@@ -197,7 +199,6 @@ def visualise_census_data_locally(conn, locations, code, size=3):
         plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
 
-
 def cluster_oas(df, n_clusters):
     """
     Cluster locations based on features using KMeans
@@ -271,170 +272,169 @@ def visualise_census_joint_distribution_for_feature_table(conn, column_a, code, 
     plot_utils.plot_fitted_lines(census_df_a, census_df_b, plot_size=(size, size)) 
 
 
+def calculate_census_correlation(conn, code, save_file=None):
+    if save_file and os.path.exists(save_file):
+        with open(save_file, 'r') as f:
+            return json.load(f)
+
+    tables = access.get_census_data_column_names()
+
+    if code == "density":
+        # For handling querying for density
+        tables["density"] = ["density"]
+
+    correlation_values = {attribute: [] for attribute in tables[code]}
+    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code])
+
+
+    for table_name, feature_columns in tables.items():
+        if table_name == code:
+            continue
+
+        feature_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[table_name])
+        print(table_name)
+
+        correlation_matrix = np.corrcoef(feature_df.T, goal_df.T)[:feature_df.shape[1], feature_df.shape[1]:]
+
+        for i, feature_column in enumerate(feature_columns):
+            for j, goal_column in enumerate(tables[code]):
+                correlation = correlation_matrix[i, j]
+                if not math.isnan(correlation): # That pesky "0 person household" attribute...
+                    correlation_values[goal_column].append((correlation, feature_column))
+
+    if save_file:
+        with open(save_file, "w") as json_file:
+            json.dump(correlation_values, json_file)
+
+    return correlation_values
+
+
+def get_strong_correlations(correlation_values, min_corr=0.7):
+    best_correlation_values = {}
+    avg_correlations = {}
+
+    for goal_column, correlations in correlation_values.items():
+        # Filter correlations based on absolute value >= 0.7
+        filtered_correlations = [(corr, feature) for corr, feature in correlations if abs(corr) >= min_corr]
+        best_correlation_values[goal_column] = filtered_correlations
+
+        # Calculate the average correlation for filtered correlations, if any
+        for correlation_value, feature_name in correlation_values[goal_column]:
+            if feature_name not in avg_correlations:
+                avg_correlations[feature_name] = []
+            avg_correlations[feature_name].append(abs(correlation_value))
+
+    return best_correlation_values
+
+
+def get_census_correlations_better_than_target(correlation_values, target_correlations, min_correlation_diff=0):
+    target_correlations_dict = {key: value for (value, key) in target_correlations}
+    better_than_target_correlations = {}
+
+    for key in correlation_values:
+        better_than_target_correlations[key] = []
+        for correlation_value, feature_name in correlation_values[key]:
+            if feature_name in target_correlations_dict and abs(correlation_value) >+ abs(target_correlations_dict[feature_name]) + min_correlation_diff  and abs(correlation_value) < 0.98:
+                better_than_target_correlations[key].append(feature_name)
+    
+    return better_than_target_correlations
+
+
+def visualise_correlations(correlation_dict):
+    data = []
+
+    for category, values in correlation_dict.items():
+        for correlation, label in values:
+            data.append({
+                "Category": category,
+                "Variable": label,
+                "Correlation": correlation
+            })
+
+    if not data:
+        print("No data to visualize.")
+        return pd.DataFrame()
+
+    # Create a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Sort the DataFrame by Category and Correlation (optional)
+    df = df.sort_values(by=["Category", "Correlation"], ascending=[True, False])
+
+    return df
+
+
+def visualise_census_feture_against_density(conn, feature, size=10):
+    columns = ["lat", "long", feature, "density"]
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+
+    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size/2, size/2))
+
+
+
+
 # Functions to visualise the osm data
-def visualise_osm_data_values(conn, columns=None, size=5):
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data", plot_size=(size, size))
+def sample_osm_data(conn, type, limit=3):
+    osm_df = aws_utils.query_AWS_load_table(conn, type, columns=None, limit=limit)
+    return osm_df
 
 
-def visualise_osm_data_distribution(conn, columns=None, size=5):
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_distribution(census_df, base_figsize=(size, size))
+def visualise_osm_data_distribution(conn, type, size=3):
+    osm_df = aws_utils.query_AWS_load_table(conn, type)
+    plot_utils.plot_values_distribution(osm_df, base_figsize=(size, size))
 
 
-def visualise_osm_by_distance_from_median_on_map(conn, columns=None, size=5):
-    if columns is not None:
-        columns = ["lat", "long"] + access.get_census_data_column_names()
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size, size))
+def visualise_osm_by_distance_from_median_on_map(conn, type, size=3):
+    osm_df = aws_utils.query_AWS_load_table(conn, type)
+    plot_utils.plot_values_on_map_relative_to_median(osm_df, base_figsize=(size, size))
 
 
-def visualise_osm_data_locally(conn, lat, lon, columns=None, size=5):
-    if columns is not None:
-        columns = ["lat", "long"] + access.get_census_data_column_names()
-    census_df = aws_utils.query_AWS_load_table(conn, "nearby_amenity_non_transport", columns)
-    plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size))
+def visualise_osm_data_locally(conn, locations, type, size=3):
+    census_df = aws_utils.query_AWS_load_table(conn, type)
+    for location, name in locations.items():
+        lat, lon = location
+        print(name)
+        plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
 
-# ----- ===== -----
-
-
-# def visualise_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
-#     feature_df = features_df[merge_on + [field_name]]
-#     df = pd.merge(feature_df, goal_df, on=merge_on)
-
-#     for goal_col in goal_df.columns:
-#         if goal_col in merge_on:
-#             continue
-            
-#         a, b = np.polyfit(df[field_name], df[goal_col], 1)
-#         plt.plot(df[field_name], a*df[field_name]+b, label=goal_col)
-
-#     plt.xlabel(field_name)
-#     plt.ylabel("Goal values")
-#     plt.title("Relationship between " + field_name + " and the mode of transportation")
-
-#     plt.legend() 
-#     plt.show() 
-
-
-# def calculate_relationship_for_field(features_df, field_name, goal_df, merge_on=["OA"]):
-#     feature_df = features_df[merge_on + [field_name]]
-#     df = pd.merge(feature_df, goal_df, on=merge_on)
-
-#     avg, mx = 0, 0 
-
-#     for goal_col in goal_df.columns:
-#         if goal_col in merge_on:
-#             continue
-            
-#         a, b = np.polyfit(df[field_name], df[goal_col], 1)
-#         avg += a
-#         mx = max(mx, abs(a))
+def visualise_osm_by_difference_matrix(conn, type, code, size=10):
+    columns = access.get_census_data_column_names()[code]
     
-#     avg /= len(goal_df.columns) - 1
+    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
+    osm_df = aws_utils.query_AWS_load_table(conn, type, columns).drop(columns=["OA", "lat", "long"])
 
-#     return avg, mx
-
-
-# def compare_single_fields(feature_df, goal_df, input_col, goal_col, merge_on=["OA"]):
-#     df = pd.merge(feature_df, goal_df, on=merge_on)
-    
-#     plt.figure(figsize=(6, 4))
-#     plt.scatter(df[input_col], df[goal_col], alpha=0.7)
-#     plt.title(f'{input_col} vs {goal_col}')
-#     plt.xlabel(input_col)
-#     plt.ylabel(goal_col)
-#     plt.grid(True)
-#     plt.show()
+    plot_utils.plot_difference_matrix_between_features(osm_df, census_df, plot_size=(size, size))
 
 
-# def visualise_transport_data(conn):
-#     field_names = ["TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-#     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", field_names)
-#     plt.figure(figsize=(18, 6))
-#     plot_utils.visualise_feature_values_increasing(transport_df)
-#     plt.show()
+def calculate_osm_correlation(conn, type, code, save_file=None):
+    if save_file and os.path.exists(save_file):
+        with open(save_file, 'r') as f:
+            return json.load(f)
+
+    tables = access.get_census_data_column_names()
+
+    correlation_values = {attribute: [] for attribute in tables[code]}
+    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code])
+
+    feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["OA", "lat", "long"])
+
+    correlation_matrix = np.corrcoef(feature_df.T, goal_df.T)[:feature_df.shape[1], feature_df.shape[1]:]
+
+    for i, feature_column in enumerate(feature_df.columns):
+        for j, goal_column in enumerate(tables[code]):
+            correlation = correlation_matrix[i, j]
+            if not math.isnan(correlation):
+                correlation_values[goal_column].append((correlation, feature_column))
+
+    if save_file:
+        with open(save_file, "w") as json_file:
+            json.dump(correlation_values, json_file)
+
+    return correlation_values
 
 
-# def visualise_transport_data_outliers(conn, number_of_outiers=5000):
-#     transport_field_names = ["TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-#     transport_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
-#     plt.figure(figsize=(18, 6))
-#     plot_utils.visualise_feature_outliers(transport_df, number_of_outiers)
-#     plt.show()
+def visualise_osm_feture_against_density(conn, type, feature, size=10):
+    columns = ["lat", "long", feature, "density"]
+    census_df = aws_utils.query_AWS_load_table(conn, type, columns)
 
-
-# def compare_two_tables(conn, code_a, code_b):
-#     column_names = {
-#         "TS001": ["household", "communal"],
-#         "TS002": ["never_married", "married_opposite_sex", "married_same_sex", "civil_partnership_opposite_sex", "civil_partnership_same_sex", "separated", "divorced", "widowed"],
-#         "TS003": ["one_person", "single_family", "other"],
-#         "TS004": ["UK", "EU", "Europe_non_EU", "Africa", "Asia", "Americas", "Australia_Oceania_Antarctica", "British_Overseas"],
-#         "TS007": ["4_minus", "5_to_9", "10_to_15", "16_to_19", "20_to_24", "25_to_34", "35_to_49", "50_to_64", "65_to_74", "75_to_84", "85_plus"],
-#         "TS011": ["0", "1", "2", "3", "4"],
-#         "TS016": ["born_in_UK", "10_plus", "5_to_10", "2_to_5", "5_minus"],
-#         "TS017": ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
-#         "TS018": ["born_in_UK", "4_minus", "5_to_7", "8_to_9", "10_to_14", "15", "16_to_17", "18_to_19", "20_to_24", "25_to_29", "30_to_44", "45_to_59", "60_to_64", "65_to_74", "75_to_84", "85_to_89", "90_plus"],
-#         "TS019": ["enumeration_address", "student_address", "UK_address", "non_UK_address"],
-#         "TS021": ["asian", "black", "mixed", "white", "other"],
-#         "TS025": ["all_english_or_welsh", "some_adult_english_or_welsh", "some_child_english_or_welsh", "no_english_or_welsh"],
-#         "TS029": ["main_language_english", "main_language_not_english"],
-#         "TS030": ["no_religion", "christian", "buddhist", "hindu", "jewish", "muslim", "sikh", "other", "not_answered"],
-#         "TS037": ["very_good", "good", "fair", "bad", "very_bad"],
-#         "TS038": ["limited_a_lot", "limited_a_little", "long_term_codition", "healthy"],
-#         "TS039": ["none", "19_minus", "20_to_49", "50_plus"],
-#         "TS040": ["none", "1", "2_plus"],
-#         "TS058": ["2_minus", "2_to_5", "5_to_10", "10_to_20", "20_to_30", "30_to_40", "40_to_60", "60_plus", "home_office", "no_fixed_location"],
-#         "TS059": ["15_minus", "16_to_30", "31_to_48", "49_plus"],
-#         "TS060": ["A_agriculture", "B_mining", "C_manufacturing", "D_electricity", "E_water", "F_construction", "G_retail", "H_transport", "I_accommodation", "J_information", "K_finance", "L_real_estate", "M_scientific", "N_administrative", "O_public_administration", "P_education", "Q_human_social", "Other"],
-#         "TS061": ["working_from_home", "underground_tram", "train", "bus", "taxi", "motorcycle", "car_driving", "car_passenger", "bicycle", "walk", "other"],
-#         "TS062": ["L1_3", "L4_6", "L7", "L8_9", "L10_11", "L12", "L13", "L14", "L15"],
-#         "TS063": ["manager", "professional", "technical", "administrative", "skilled", "caring", "sales", "operator", "elementary"],
-#         "TS065": ["employed", "unemployed", "never_been_employed"],
-#         "TS066": ["active_non_student", "active_student", "inactive", "other"],
-#         "TS067": ["none", "level_1", "level_2", "apprentiticeship", "level_3", "level_4", "other"],
-#         "TS068": ["student", "not_student"],
-#         "TS077": ["heterosexual", "homosexual", "bisexual", "other", "no_answer"],
-#         "TS078": ["same_as_sex", "no_specific_identity", "trans_woman", "trans_man", "other", "no_answer"]
-#     }
-#     columns_a = [code_a + column_name for column_name in column_names[code_a]]
-#     columns_b = [code_b + column_name for column_name in column_names[code_b]]
-        
-#     response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", ["OA"] + columns_a + columns_b)
-
-#     a_df = response_df[["OA"] + columns_a]
-#     b_df = response_df[["OA"] + columns_b]
-
-#     plt.figure(figsize=(9, 3 * len(columns_a)))
-#     plot_utils.visualise_relationship_by_components(a_df, b_df)
-#     plt.show()
-
-
-def visualise_feature_on_map(conn, feature):
-    feature_names = ["lat", "long", feature]
-    feature_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", feature_names)
-
-    plot_utils.plot_values_on_map_relative_to_median(feature_df, base_figsize=(9, 9))
-    plt.show()
-
-
-# def visualise_all_transport_usages_on_map(conn):
-#     transport_field_names = ["lat", "long", "TS061_working_from_home", "TS061_underground_tram", "TS061_train", "TS061_bus", "TS061_taxi", "TS061_motorcycle", "TS061_car_driving", "TS061_car_passenger", "TS061_bicycle", "TS061_walk", "TS061_other"]
-#     response_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", transport_field_names)
-
-#     for feature_name in transport_field_names:
-#         if feature_name in ["lat", "long"]:
-#             continue
-
-#         plt.figure(figsize=(12, 12))
-#         plot_utils.visualise_feature_on_map_relative_to_median(response_df, feature_name)
-#         plt.show()
-
-
-# def visualise_relationship_between_two_fields(conn, field_a, field_b, table_name="normalised_census_data"):
-#     response_df = aws_utils.query_AWS_load_table(conn, table_name, [field_b, field_a])
-
-#     plt.figure(figsize=(9, 9))
-#     plot_utils.visualise_relationship(response_df, field_a, field_b)
-#     plt.show()
+    plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size/2, size/2))
