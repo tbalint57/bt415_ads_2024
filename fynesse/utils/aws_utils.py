@@ -82,6 +82,8 @@ def delete_invalid_entries(conn, table_name, invalid_values):
 def query_AWS_load_table(conn, table_name, columns=None, limit=None):
     if columns is None and limit is None:
         query_str = f"SELECT * FROM {table_name};"
+    elif columns is None:
+        query_str = f"SELECT * FROM {table_name} LIMIT {limit};"
     elif limit is None:
         cols = ", ".join([f"`{column}`" for column in columns])
         query_str = f"SELECT {cols} FROM {table_name};"

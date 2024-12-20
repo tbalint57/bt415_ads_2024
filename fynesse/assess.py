@@ -397,15 +397,6 @@ def visualise_osm_data_locally(conn, locations, type, size=3):
         plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
 
-def visualise_osm_by_difference_matrix(conn, type, code, size=10):
-    columns = access.get_census_data_column_names()[code]
-    
-    census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
-    osm_df = aws_utils.query_AWS_load_table(conn, type, columns).drop(columns=["OA", "lat", "long"])
-
-    plot_utils.plot_difference_matrix_between_features(osm_df, census_df, plot_size=(size, size))
-
-
 def calculate_osm_correlation(conn, type, code, save_file=None):
     if save_file and os.path.exists(save_file):
         with open(save_file, 'r') as f:
