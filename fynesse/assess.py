@@ -172,26 +172,32 @@ def sample_census_data(conn, code, limit=3):
 
 
 # Functions to visualise the census data
-def visualise_census_data_values(conn, code, size=5):
-    columns = access.get_census_data_column_names()[code]
+def visualise_census_data_values(conn, code, columns=None, size=5):
+    if columns is None:
+        columns = access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_increasing(census_df, title="Value Set of Trensport Data", plot_size=(size, size))
 
 
-def visualise_census_data_distribution(conn, code, size=5):
-    columns = access.get_census_data_column_names()[code]
+def visualise_census_data_distribution(conn, code, columns=None, size=5):
+    if columns is None:
+        columns = access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_distribution(census_df, base_figsize=(size, size))
 
 
-def visualise_census_by_distance_from_median_on_map(conn, code, size=5):
-    columns = ["lat", "long"] + access.get_census_data_column_names()[code]
+def visualise_census_by_distance_from_median_on_map(conn, code, columns=None, size=5):
+    if columns is None:
+        columns = access.get_census_data_column_names()[code]
+    columns = ["lat", "long"] +  columns
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     plot_utils.plot_values_on_map_relative_to_median(census_df, base_figsize=(size, size))
 
 
-def visualise_census_data_locally(conn, locations, code, size=3):
-    columns = ["lat", "long"] + access.get_census_data_column_names()[code]
+def visualise_census_data_locally(conn, locations, code, columns=None, size=5):
+    if columns is None:
+        columns = access.get_census_data_column_names()[code]
+    columns = ["lat", "long"] +  columns
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
     for location, name in locations.items():
         lat, lon = location
@@ -214,8 +220,9 @@ def cluster_oas(df, n_clusters):
     return clustered_df
 
 
-def visualise_census_by_clustering(conn, code, n_clusters=5, size=10):
-    columns = ["lat", "long"] + access.get_census_data_column_names()[code]
+def visualise_census_by_clustering(conn, code, n_clusters=5, columns=None, size=10):
+    if columns is None:
+        columns = ["lat", "long"] + access.get_census_data_column_names()[code]
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
 
     cluster_df = cluster_oas(census_df, n_clusters=n_clusters)

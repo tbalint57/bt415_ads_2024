@@ -618,3 +618,93 @@ def upload_OSM_data(conn, source_file="uk.osm.pbf"):
     nearby_amenity_transport = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_transport_index_file, process_func=amenity_data_extractor)
     nearby_amenity_transport_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity_transport).fillna(0).astype(int)], axis=1)
     aws_utils.upload_data_from_df(conn, nearby_amenity_transport_df ,"nearby_amenity_transport", ["varchar(16)", "float(16)", "float(16)"] + ["int(16)" for _ in range(len(nearby_amenity_transport_df.columns) - 3)], "OA")
+
+
+def upload_OSM_amenities(conn, source_file="uk.osm.pbf"):
+    filtered_osm_file = "uk_nodes_with_tags.osm.pbf"
+    osm_utils.filter_by_number_of_tags(source_file, filtered_osm_file)
+
+    amenity_top50=[
+        ("amenity", "bench"),
+        ("amenity", "post_box"),
+        ("amenity", "bicycle_parking"),
+        ("amenity", "waste_basket"),
+        ("amenity", "fast_food"),
+        ("amenity", "cafe"),
+        ("amenity", "restaurant"),
+        ("amenity", "pub"),
+        ("amenity", "telephone"),
+        ("amenity", "parking"),
+        ("amenity", "recycling"),
+        ("amenity", "atm"),
+        ("amenity", "post_office"),
+        ("amenity", "grit_bin"),
+        ("amenity", "pharmacy"),
+        ("amenity", "toilets"),
+        ("amenity", "vending_machine"),
+        ("amenity", "hunting_stand"),
+        ("amenity", "charging_station"),
+        ("amenity", "parking_space"),
+        ("amenity", "place_of_worship"),
+        ("amenity", "bar"),
+        ("amenity", "bank"),
+        ("amenity", "dentist"),
+        ("amenity", "fuel"),
+        ("amenity", "bicycle_rental"),
+        ("amenity", "social_facility"),
+        ("amenity", "doctors"),
+        ("amenity", "public_bookcase"),
+        ("amenity", "community_centre"),
+        ("amenity", "kindergarten"),
+        ("amenity", "parcel_locker"),
+        ("amenity", "drinking_water"),
+        ("amenity", "shelter"),
+        ("amenity", "motorcycle_parking"),
+        ("amenity", "parking_entrance"),
+        ("amenity", "library"),
+        ("amenity", "drinking_water"),
+        ("amenity", "clock"),
+        ("amenity", "veterinary"),
+        ("amenity", "taxi"),
+        ("amenity", "clinic"),
+        ("amenity", "car_wash"),
+        ("amenity", "childcare"),
+        ("amenity", "school"),
+        ("amenity", "car_sharing"),
+        ("amenity", "ice_cream"),
+        ("amenity", "nightclub"),
+        ("amenity", "funtain"),
+        ("amenity", "ferry_terminal"),
+        ("amenity", "car_rental"),
+    ]
+
+    amenity_file = "uk_amenity.osm.pbf"
+    osm_utils.filter_and_save_selected_tags_only(filtered_osm_file, amenity_file, amenity_top50)
+
+    amenity_index_file = "uk_amenities"
+    osm_utils.build_and_save_index(amenity_file, amenity_index_file)
+
+    oa_cords_table_name = "oa_cords"
+    oa_cords_df = aws_utils.query_AWS_load_table(conn, oa_cords_table_name)
+
+    latitudes = oa_cords_df["lat"].to_numpy()
+    longitudes = oa_cords_df["long"].to_numpy()
+
+    def amenity_data_extractor(nodes):
+        count = {}
+
+        for node in nodes:
+            node_tags = node[2]
+            for tag_key, tag_value in node_tags.items():
+                # We can do this as by assumption tag_key=amenity
+                if tag_value not in count:
+                    count[tag_value] = 0
+
+                count[tag_value] += 1
+
+        return count
+    
+    nearby_amenity = osm_utils.query_osm_in_batch(latitudes, longitudes, amenity_index_file, process_func=amenity_data_extractor)
+    nearby_amenity_df = pd.concat([oa_cords_df, pd.DataFrame(nearby_amenity).fillna(0).astype(int)], axis=1).rename(columns=lambda col: col.replace(';', '_'))
+    print(nearby_amenity_df)
+    aws_utils.upload_data_from_df(conn, nearby_amenity_df ,"nearby_amenity", ["varchar(16)", "float(16)", "float(16)"] + ["int(16)" for _ in range(len(nearby_amenity_df.columns) - 3)], "OA")
