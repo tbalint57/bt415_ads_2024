@@ -131,7 +131,7 @@ def transport_model_1(conn, max_steps=5):
 
     census_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns)
 
-    feature_df = list(set(census_df[["density"] + tables["TS007"] + tables["TS038"] + tables["TS058"]]).difference({"TS058_home_office"}))
+    feature_df = census_df[list(set(census_df[["density"] + tables["TS007"] + tables["TS038"] + tables["TS058"]]).difference({"TS058_home_office"}))]
 
     return {transport_method: train_regularised_model(feature_df, census_df[[transport_method]], max_steps=max_steps) for transport_method in tables["TS061"]}
 
