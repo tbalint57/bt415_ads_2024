@@ -404,7 +404,7 @@ def visualise_osm_data_locally(conn, locations, type, size=3):
         plot_utils.plot_values_on_map_relative_to_median(census_df, loc=(lat, lon), base_figsize=(size, size), max_col_size=6, labels_on=False)
 
 
-def calculate_osm_correlation(conn, type, code, save_file=None):
+def calculate_osm_correlation(conn, type, code, columns=[], save_file=None):
     if save_file and os.path.exists(save_file):
         with open(save_file, 'r') as f:
             return json.load(f)
@@ -412,12 +412,17 @@ def calculate_osm_correlation(conn, type, code, save_file=None):
     tables = access.get_census_data_column_names()
     tables["density"] = ["density"]
 
-    correlation_values = {attribute: [] for attribute in tables[code]}
+    if columns is None:
+        correlation_values = {attribute: [] for attribute in tables[code]}
+        goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code] + ["OA"])
+        goal_columns = tables[code]
+    else:
+        correlation_values = {attribute: [] for attribute in columns}
+        goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", columns + ["OA"])
+        goal_columns = columns
 
-    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code] + ["OA"])
     feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
 
-    goal_columns = tables[code]
     feature_columns = feature_df.columns.drop("OA")
 
     joined_df = goal_df.merge(feature_df, how="inner", on=["OA"])
