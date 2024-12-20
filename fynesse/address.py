@@ -131,14 +131,24 @@ def get_model(conn, input_table_name, input_columns, output_table_name, output_c
     else:
         input_df = aws_utils.query_AWS_load_table(conn, input_table_name)
 
-    output_df = aws_utils.query_AWS_load_table(conn, output_table_name, ["OA"] + output_column)
+    output_df = aws_utils.query_AWS_load_table(conn, output_table_name, ["OA"] + [output_column])
 
     joined_df = input_df.merge(output_df, how="inner", on=["OA"])
 
-    input_df = joined_df[input_columns]
-    output_df = joined_df[output_column]
+    input_df = joined_df[input_df.columns.drop(["OA"])]
+    output_df = joined_df[output_df.columns.drop(["OA"])]
 
     return train_regularised_model(input_df, output_df, max_steps=max_steps)
+
+
+def get_closest_oa(conn, lat, long, table_name, column_name):
+    df = aws_utils.query_AWS_load_table(conn, table_name, columns=[column_name])
+    df['distance'] = np.sqrt((df['lat'] - lat)**2 + (df['long'] - long)**2)
+
+    closest_row = df.loc[df['distance'].idxmin()]
+
+    return closest_row[column_name]
+
 
 def transport_model_1(conn, max_steps=5):
     tables = access.get_census_data_column_names()
