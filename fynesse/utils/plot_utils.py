@@ -385,7 +385,7 @@ def plot_correlation_heatmap_between_features(df1, df2, plot_size=(10, 10)):
 
     plt.tight_layout()
     plt.show()
-    
+
 
 def plot_hexbin_joint_distribution(df1, df2, plot_size=(10, 10)):
     x = df1.iloc[:, 0]

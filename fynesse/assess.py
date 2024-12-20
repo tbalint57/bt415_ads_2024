@@ -403,6 +403,7 @@ def calculate_osm_correlation(conn, type, code, save_file=None):
             return json.load(f)
 
     tables = access.get_census_data_column_names()
+    tables["density"] = ["density"]
 
     correlation_values = {attribute: [] for attribute in tables[code]}
 
@@ -430,6 +431,23 @@ def calculate_osm_correlation(conn, type, code, save_file=None):
             json.dump(correlation_values, json_file)
 
     return correlation_values
+
+
+def visualise_osm_census_table_by_correlation(conn, type, code, size=10):
+    tables = access.get_census_data_column_names()
+
+    goal_df = aws_utils.query_AWS_load_table(conn, "normalised_census_data", tables[code] + ["OA"])
+    feature_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
+
+    goal_columns = tables[code]
+    feature_columns = feature_df.columns.drop("OA")
+
+    joined_df = goal_df.merge(feature_df, how="inner", on=["OA"])
+
+    goal_df = joined_df[goal_columns]
+    feature_df = joined_df[feature_columns]
+
+    plot_utils.plot_correlation_heatmap_between_features(goal_df, feature_df, plot_size=(size, size)) 
 
 
 def visualise_osm_feture_against_density(conn, type, feature, size=10):
