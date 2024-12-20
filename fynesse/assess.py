@@ -385,7 +385,7 @@ def visualise_osm_data_distribution(conn, type, size=3):
 
 
 def visualise_osm_by_distance_from_median_on_map(conn, type, size=3):
-    osm_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["lat", "long"])
+    osm_df = aws_utils.query_AWS_load_table(conn, type).drop(columns=["OA"])
     plot_utils.plot_values_on_map_relative_to_median(osm_df, base_figsize=(size, size))
 
 
